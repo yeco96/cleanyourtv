@@ -107,11 +107,15 @@ public final class KidsHomeActivity extends Activity {
             today.put(app.pkg, app.seconds);
             all += app.seconds;
         }
-        total.setText(getString(R.string.kid_today_total, duration(all)));
+        boolean up = UsageGuard.timeUp(this);
+        int limit = UsageGuard.limitToday(this);
+        total.setText(up ? getString(R.string.kid_time_up) : limit > 0
+                ? getString(R.string.kid_today_of, duration(all), duration((limit + UsageGuard.extraMinutes(this)) * 60L))
+                : getString(R.string.kid_today_total, duration(all)));
         Set<String> allowed = UsageGuard.allowed(this);
         List<String> shown = new ArrayList<>();
         for (String pkg : allowed) {
-            if (launchIntent(pm, pkg) != null) shown.add(pkg);
+            if (!up && launchIntent(pm, pkg) != null) shown.add(pkg);   // time is up: no app tiles, only Grown-ups
         }
         shown.sort((a, b) -> label(pm, a).compareToIgnoreCase(label(pm, b)));
         LinearLayout first = null;

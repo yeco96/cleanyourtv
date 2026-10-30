@@ -24,6 +24,7 @@ public final class UsageGuardService extends AccessibilityService {
     };
 
     private long lastBounce;
+    private String lastFront;
     private static UsageGuardService running;
     private android.view.View card;
 
@@ -94,8 +95,11 @@ public final class UsageGuardService extends AccessibilityService {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
         check();
         CharSequence pkg = event.getPackageName();
+        if (pkg != null) lastFront = pkg.toString();
         if (pkg == null || !UsageGuard.guarding(this)) return;
-        if (!KidsPolicy.bounce(true, pkg.toString(), getPackageName(), UsageGuard.allowed(this), keyboards())) return;
+        // With the time used up nothing is allowed but the kids' screen.
+        java.util.Set<String> allowed = UsageGuard.timeUp(this) ? java.util.Collections.<String>emptySet() : UsageGuard.allowed(this);
+        if (!KidsPolicy.bounce(true, pkg.toString(), getPackageName(), allowed, keyboards())) return;
         // One bounce per half second: some apps change windows several times as they start.
         long now = android.os.SystemClock.elapsedRealtime();
         if (now - lastBounce < 500) return;
@@ -123,9 +127,13 @@ public final class UsageGuardService extends AccessibilityService {
         if (!UsageGuard.isActive(this)) return;
         UsageTracker.update(this, UsageReport.CHILD);
         UsageGuard.checkNotice(this);
+        if (UsageGuard.timeUp(this) && !getPackageName().equals(lastFront)) {   // time ran out inside an app: send it out
+            startActivity(new Intent(this, KidsHomeActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
+        }
         if (!ticking) {
             ticking = true;
-            handler.postDelayed(tick, TICK_MS);
+            handler.postDelayed(tick, UsageGuard.limitToday(this) > 0 ? 30_000L : TICK_MS);
         }
     }
 

@@ -3121,7 +3121,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return;
         }
         pill.setTextColor(0xFFF5B945);
-        pill.setText(getString(R.string.kid_btn_on, (UsageGuard.usedSeconds(this) + 30) / 60));
+        pill.setText(UsageGuard.limitToday(this) > 0
+                ? getString(R.string.kid_btn_left, (UsageGuard.remainingSeconds(this) + 59) / 60)
+                : getString(R.string.kid_btn_on, (UsageGuard.usedSeconds(this) + 30) / 60));
     }
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */
     private boolean libraryFromTopBar;

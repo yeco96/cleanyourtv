@@ -211,6 +211,12 @@ public final class KidModeActivity extends Activity {
         }
     }
 
+    /** "2 h", "45 min" or "no limit". */
+    private String limitText(int minutes) {
+        if (minutes == 0) return getString(R.string.kid_no_limit);
+        return minutes % 60 == 0 ? getString(R.string.kid_hours, minutes / 60) : getString(R.string.usage_minutes, (long) minutes);
+    }
+
     /** Mode on: the first time there is no list of apps, ask for it right away. */
     private void afterActivate() {
         Toast.makeText(this, R.string.kid_on_toast, Toast.LENGTH_LONG).show();
@@ -220,7 +226,9 @@ public final class KidModeActivity extends Activity {
 
     private void showOptions() {
         title.setText(R.string.kid_options);
-        hint.setText(getString(R.string.kid_used, (UsageGuard.usedSeconds(this) + 30) / 60));
+        hint.setText(UsageGuard.limitToday(this) > 0
+                ? getString(R.string.kid_left_today, (UsageGuard.remainingSeconds(this) + 59) / 60)
+                : getString(R.string.kid_used, (UsageGuard.usedSeconds(this) + 30) / 60));
         int keep = Math.max(0, options.indexOfChild(options.getFocusedChild()));
         options.removeAllViews();
         addOption(getString(R.string.kid_exit), () -> {
@@ -228,6 +236,12 @@ public final class KidModeActivity extends Activity {
             Toast.makeText(this, R.string.kid_off_toast, Toast.LENGTH_LONG).show();
             finish();
         });
+        addOption(getString(R.string.kid_limit_weekdays, limitText(UsageGuard.weekdayLimit(this))),
+                () -> UsageGuard.setWeekdayLimit(this, UsageLimit.nextLimit(UsageGuard.weekdayLimit(this))));
+        addOption(getString(R.string.kid_limit_weekend, limitText(UsageGuard.weekendLimit(this))),
+                () -> UsageGuard.setWeekendLimit(this, UsageLimit.nextLimit(UsageGuard.weekendLimit(this))));
+        addOption(getString(R.string.kid_extra, 15), () -> UsageGuard.addExtraMinutes(this, 15));
+        addOption(getString(R.string.kid_extra, 30), () -> UsageGuard.addExtraMinutes(this, 30));
         int plan = UsageGuard.schedule(this);
         addOption(plan == 0 ? getString(R.string.kid_schedule_off) : getString(R.string.kid_schedule_on,
                 String.format("%02d:00", KidsSchedule.startHour(plan)), String.format("%02d:00", KidsSchedule.endHour(plan))),

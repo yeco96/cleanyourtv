@@ -208,4 +208,15 @@
     <string name="kid_schedule_off">Automatic schedule: off</string>
     <string name="kid_schedule_on">Automatic schedule: %1$s to %2$s</string>
     <string name="usage_kids_busiest">Kids use most on %1$s (%2$s)</string>
+    <string name="kid_left_ten">10 minutes of TV left today</string>
+    <string name="kid_left_one">1 minute of TV left today</string>
+    <string name="kid_time_up">Time is up for today</string>
+    <string name="kid_today_of">Today: %1$s of %2$s</string>
+    <string name="kid_btn_left">Kids · %1$d min left</string>
+    <string name="kid_left_today">Time left today: %1$d min</string>
+    <string name="kid_limit_weekdays">Monday to Friday: %1$s</string>
+    <string name="kid_limit_weekend">Saturday and Sunday: %1$s</string>
+    <string name="kid_no_limit">no limit</string>
+    <string name="kid_hours">%1$d h</string>
+    <string name="kid_extra">Give %1$d more minutes today</string>
 </resources>

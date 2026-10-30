@@ -17,6 +17,28 @@ final class UsageLimit {
         return (int) Math.max(0, Math.min(MAX_NOTICE_HOURS, usedSeconds / 3600));
     }
 
+    /** Daily limits a grown-up steps through with OK, in minutes; 0 is "no limit". */
+    static final int[] LIMIT_CHOICES = {0, 30, 45, 60, 90, 120, 150, 180};
+    static final int DEFAULT_LIMIT_MIN = 120;
+
+    /** The choice after this one, wrapping to "no limit"; a value that is not a choice goes to the first. */
+    static int nextLimit(int current) {
+        for (int i = 0; i < LIMIT_CHOICES.length; i++) {
+            if (LIMIT_CHOICES[i] == current) return LIMIT_CHOICES[(i + 1) % LIMIT_CHOICES.length];
+        }
+        return LIMIT_CHOICES[0];
+    }
+
+    /** Seconds left today: the limit plus the extra time a grown-up gave, less what was used; never below 0. */
+    static long remainingSeconds(long usedSeconds, int limitMinutes, int extraMinutes) {
+        return Math.max(0, (limitMinutes + extraMinutes) * 60L - usedSeconds);
+    }
+
+    /** Saturday and Sunday have their own limit. */
+    static boolean isWeekend(java.time.DayOfWeek day) {
+        return day == java.time.DayOfWeek.SATURDAY || day == java.time.DayOfWeek.SUNDAY;
+    }
+
     static boolean validPin(String pin) {
         if (pin == null || pin.length() != PIN_DIGITS) return false;
         for (int i = 0; i < pin.length(); i++) if (pin.charAt(i) < '0' || pin.charAt(i) > '9') return false;

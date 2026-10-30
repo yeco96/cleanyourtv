@@ -198,4 +198,15 @@
     <string name="kid_schedule_off">Horario automático: apagado</string>
     <string name="kid_schedule_on">Horario automático: de %1$s a %2$s</string>
     <string name="usage_kids_busiest">Los niños usan más el %1$s (%2$s)</string>
+    <string name="kid_left_ten">Quedan 10 minutos de TV hoy</string>
+    <string name="kid_left_one">Queda 1 minuto de TV hoy</string>
+    <string name="kid_time_up">Se acabó el tiempo de hoy</string>
+    <string name="kid_today_of">Hoy: %1$s de %2$s</string>
+    <string name="kid_btn_left">Niños · quedan %1$d min</string>
+    <string name="kid_left_today">Tiempo que queda hoy: %1$d min</string>
+    <string name="kid_limit_weekdays">Lunes a viernes: %1$s</string>
+    <string name="kid_limit_weekend">Sábado y domingo: %1$s</string>
+    <string name="kid_no_limit">sin límite</string>
+    <string name="kid_hours">%1$d h</string>
+    <string name="kid_extra">Dar %1$d minutos más hoy</string>
 </resources>

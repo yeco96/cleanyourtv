@@ -76,7 +76,7 @@ final class UsageGuard {
 
     /** True when kids mode is on and has apps to allow: then Home is the kids' screen and the guard sends other apps back. */
     static boolean guarding(Context c) {
-        return isActive(c) && !allowed(c).isEmpty();
+        return isActive(c) && (!allowed(c).isEmpty() || timeUp(c));
     }
 
     /** Today's date as the day key (a day runs from 05:00 to 05:00). */
@@ -89,6 +89,51 @@ final class UsageGuard {
         return UsageStore.of(c).daySeconds(today(), UsageReport.CHILD);
     }
 
+    /** The daily limit for weekdays and for the weekend, in minutes (0: none). Two hours until changed. */
+    static int weekdayLimit(Context c) {
+        return prefs(c).getInt("limit_wd", UsageLimit.DEFAULT_LIMIT_MIN);
+    }
+
+    static int weekendLimit(Context c) {
+        return prefs(c).getInt("limit_we", UsageLimit.DEFAULT_LIMIT_MIN);
+    }
+
+    static void setWeekdayLimit(Context c, int minutes) {
+        prefs(c).edit().putInt("limit_wd", minutes).apply();
+    }
+
+    static void setWeekendLimit(Context c, int minutes) {
+        prefs(c).edit().putInt("limit_we", minutes).apply();
+    }
+
+    /** Today's limit in minutes (0: none), by the day the kids' day is on. */
+    static int limitToday(Context c) {
+        boolean weekend = UsageLimit.isWeekend(java.time.LocalDate.parse(today()).getDayOfWeek());
+        return weekend ? weekendLimit(c) : weekdayLimit(c);
+    }
+
+    /** Minutes a grown-up added for today; they lapse with the day. */
+    static int extraMinutes(Context c) {
+        SharedPreferences p = prefs(c);
+        return today().equals(p.getString("extra_day", "")) ? p.getInt("extra", 0) : 0;
+    }
+
+    static void addExtraMinutes(Context c, int minutes) {
+        prefs(c).edit().putString("extra_day", today()).putInt("extra", extraMinutes(c) + minutes).apply();
+        prefs(c).edit().putInt("notice", 0).apply();   // the notices before the end come again
+    }
+
+    /** Seconds the kids have left today; effectively unlimited when there is no limit. */
+    static long remainingSeconds(Context c) {
+        int limit = limitToday(c);
+        return limit == 0 ? Long.MAX_VALUE : UsageLimit.remainingSeconds(usedSeconds(c), limit, extraMinutes(c));
+    }
+
+    /** True when kids mode is on and today's time is used up: the kids' screen is all that opens. */
+    static boolean timeUp(Context c) {
+        return isActive(c) && limitToday(c) > 0 && remainingSeconds(c) <= 0;
+    }
+
     /** The hour notice (1 or 2) already given today; 0 when none. */
     static int noticeGiven(Context c) {
         SharedPreferences p = prefs(c);
@@ -98,10 +143,18 @@ final class UsageGuard {
     /** Says so (once each) when the kids reach 1 hour and 2 hours today. Called by the watcher service and by Home. */
     static void checkNotice(Context c) {
         if (!isActive(c)) return;
-        int hours = UsageLimit.hoursReached(usedSeconds(c));
-        if (hours > noticeGiven(c)) {
-            setNoticeGiven(c, hours);
-            int text = hours == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2;
+        int limit = limitToday(c);
+        int code, text;
+        if (limit > 0) {   // with a limit the notices count down to it: 10 minutes left, then 1
+            long left = remainingSeconds(c);
+            code = left <= 60 ? 2 : left <= 600 ? 1 : 0;
+            text = code == 2 ? R.string.kid_left_one : R.string.kid_left_ten;
+        } else {   // without one they mark the hours used
+            code = UsageLimit.hoursReached(usedSeconds(c));
+            text = code == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2;
+        }
+        if (code > noticeGiven(c)) {
+            setNoticeGiven(c, code);
             if (!UsageGuardService.card(c.getString(text))) {
                 android.widget.Toast.makeText(c.getApplicationContext(), text, android.widget.Toast.LENGTH_LONG).show();
             }

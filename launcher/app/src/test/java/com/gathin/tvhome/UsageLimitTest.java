@@ -19,6 +19,28 @@ public class UsageLimitTest {
     }
 
     @Test
+    public void theLimitStepsThroughItsChoicesAndWraps() {
+        assertEquals(30, UsageLimit.nextLimit(0));
+        assertEquals(120, UsageLimit.nextLimit(90));
+        assertEquals(0, UsageLimit.nextLimit(180));
+        assertEquals(0, UsageLimit.nextLimit(77));
+    }
+
+    @Test
+    public void timeLeftIsTheLimitPlusExtraLessUsedAndNeverNegative() {
+        assertEquals(30 * 60, UsageLimit.remainingSeconds(60 * 60, 90, 0));
+        assertEquals(60 * 60, UsageLimit.remainingSeconds(60 * 60, 90, 30));
+        assertEquals(0, UsageLimit.remainingSeconds(500 * 60, 90, 15));
+    }
+
+    @Test
+    public void onlySaturdayAndSundayAreTheWeekend() {
+        assertTrue(UsageLimit.isWeekend(java.time.DayOfWeek.SATURDAY));
+        assertTrue(UsageLimit.isWeekend(java.time.DayOfWeek.SUNDAY));
+        assertFalse(UsageLimit.isWeekend(java.time.DayOfWeek.FRIDAY));
+    }
+
+    @Test
     public void aPinIsFourDigitsAndIsOnlyKeptHashed() {
         assertTrue(UsageLimit.validPin("0420"));
         assertFalse(UsageLimit.validPin("42"));

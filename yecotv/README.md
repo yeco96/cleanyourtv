@@ -1,5 +1,7 @@
 # yecoTV
 
+> Qué hace esta versión, función por función: [`FEATURES.md`](FEATURES.md).
+
 Mi versión del launcher de [CleanYourTV](https://github.com/Gathin23/cleanyourtv), en la rama `yecoTV` de este fork.
 Esta carpeta guarda **lo mío**: cómo dejé cada TV y cómo repetirlo. Lo que no está aquí es del proyecto original.
 

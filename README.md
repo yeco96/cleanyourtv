@@ -1,3 +1,15 @@
+<!-- yecoTV fork notice: everything below this block is the original project's README. -->
+> ## 🇨🇷 yecoTV: un fork de CleanYourTV
+> Este repositorio es un **fork personal** de [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (MIT), hecho para dos TVs Xiaomi de una casa con niños.
+> Sobre el proyecto original añade: **películas de TMDb como fondo** con su panel, **"Seguir viendo"**, **estadísticas de uso de la TV**, y un **Modo niños** con PIN, lista de apps permitidas, guardia, límite diario de 2 h (configurable), tiempo extra, horario automático y una pantalla propia para los niños.
+>
+> - **Todo lo que hace este fork, cómo se usa y en qué se aparta del original:** [`yecotv/FEATURES.md`](yecotv/FEATURES.md)
+> - **Cómo se instaló cada TV y las lecciones aprendidas:** [`yecotv/README.md`](yecotv/README.md)
+> - Rama de trabajo: `yecoTV` (por defecto). Para limpiar tu propia TV con el proyecto original, sigue las instrucciones de abajo.
+>
+> *English: a personal fork of CleanYourTV for two Xiaomi TVs in a home with kids. It adds TMDb movie backdrops, "Continue watching", TV usage stats and a Kids mode (PIN, allowed apps, guard, 2 h daily limit, schedule). It breaks some of the original's rules on purpose (INTERNET, usage access, an accessibility service); see [`yecotv/FEATURES.md`](yecotv/FEATURES.md).*
+> *This product uses the TMDB API but is not endorsed or certified by TMDB.*
+
 <p align="center">
   <a href="https://cleanyour.tv/halloween"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner-halloween.png" alt="CleanYourTV, Halloween edition. Your TV, minus the ads. Strip the bloatware from any Android TV or Google TV over Wi-Fi and replace the ad-filled home screen with a clean launcher that looks like an Apple TV. No root, no cable, nothing uninstalled, and a one-line restore. Now with a pumpkin." width="800"></a>
 </p>

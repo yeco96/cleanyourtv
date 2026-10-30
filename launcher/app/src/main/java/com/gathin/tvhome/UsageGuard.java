@@ -101,8 +101,10 @@ final class UsageGuard {
         int hours = UsageLimit.hoursReached(usedSeconds(c));
         if (hours > noticeGiven(c)) {
             setNoticeGiven(c, hours);
-            android.widget.Toast.makeText(c.getApplicationContext(), hours == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2,
-                    android.widget.Toast.LENGTH_LONG).show();
+            int text = hours == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2;
+            if (!UsageGuardService.card(c.getString(text))) {
+                android.widget.Toast.makeText(c.getApplicationContext(), text, android.widget.Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -116,7 +118,49 @@ final class UsageGuard {
     }
 
     static void deactivate(Context c) {
-        prefs(c).edit().putBoolean("enabled", false).apply();
+        prefs(c).edit().putBoolean("enabled", false).putBoolean("auto", false).apply();
+    }
+
+    private static int minuteOfDay() {
+        java.time.LocalTime now = java.time.LocalTime.now();
+        return now.getHour() * 60 + now.getMinute();
+    }
+
+    /** The automatic window chosen (0 is off). */
+    static int schedule(Context c) {
+        return prefs(c).getInt("schedule", 0);
+    }
+
+    static void setSchedule(Context c, int choice) {
+        prefs(c).edit().putInt("schedule", choice).putString("suppressed", "").apply();
+    }
+
+    /** A grown-up left with the PIN: inside a window the schedule does not turn the mode on again that day. */
+    static void leaveByPin(Context c) {
+        SharedPreferences.Editor edit = prefs(c).edit().putBoolean("enabled", false).putBoolean("auto", false);
+        if (KidsSchedule.inWindow(schedule(c), minuteOfDay())) edit.putString("suppressed", today() + ":" + schedule(c));
+        edit.apply();
+    }
+
+    /**
+     * Turns the mode on inside the chosen window and off again when it ends, but only a mode the schedule itself turned
+     * on, and only once a PIN and some apps are set. Called from Home, its minute tick and the watcher service.
+     */
+    static void applySchedule(Context c) {
+        SharedPreferences p = prefs(c);
+        int choice = schedule(c);
+        if (choice == 0) {
+            if (p.getBoolean("auto", false)) p.edit().putBoolean("auto", false).apply();
+            return;
+        }
+        if (KidsSchedule.inWindow(choice, minuteOfDay())) {
+            if (!isActive(c) && hasPin(c) && !allowed(c).isEmpty() && !(today() + ":" + choice).equals(p.getString("suppressed", ""))) {
+                p.edit().putBoolean("enabled", true).putBoolean("auto", true).apply();
+                enableService(c);
+            }
+        } else if (isActive(c) && p.getBoolean("auto", false)) {
+            p.edit().putBoolean("enabled", false).putBoolean("auto", false).apply();
+        }
     }
 
     /**

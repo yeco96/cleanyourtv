@@ -144,6 +144,15 @@ public final class UsageActivity extends Activity {
         if (days > 1) {
             long[] perDay = UsageReport.perDay(now, from, days, null);
             body.addView(text(getString(R.string.usage_average, duration(UsageReport.averageOfUsedDays(perDay))), 16, 0xAAFFFFFF));
+            long[] kidsPerDay = UsageReport.perDay(now, from, days, UsageReport.CHILD);
+            long kidsMax = UsageReport.max(kidsPerDay);
+            if (kidsMax > 0) {
+                int busiest = 0;
+                for (int i = 1; i < kidsPerDay.length; i++) if (kidsPerDay[i] > kidsPerDay[busiest]) busiest = i;
+                java.time.LocalDate day = from.plusDays(busiest);
+                String dayName = day.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.getDefault()) + " " + day.getDayOfMonth();
+                body.addView(text(getString(R.string.usage_kids_busiest, dayName, duration(kidsMax)), 16, 0xAAFFFFFF));
+            }
             LinearLayout.LayoutParams barsAt = new LinearLayout.LayoutParams(-1, dp(120));
             barsAt.topMargin = dp(14);
             body.addView(dayBars(perDay, from), barsAt);

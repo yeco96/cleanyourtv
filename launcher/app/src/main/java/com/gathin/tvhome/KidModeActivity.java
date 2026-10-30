@@ -221,19 +221,24 @@ public final class KidModeActivity extends Activity {
     private void showOptions() {
         title.setText(R.string.kid_options);
         hint.setText(getString(R.string.kid_used, (UsageGuard.usedSeconds(this) + 30) / 60));
+        int keep = Math.max(0, options.indexOfChild(options.getFocusedChild()));
         options.removeAllViews();
         addOption(getString(R.string.kid_exit), () -> {
-            UsageGuard.deactivate(this);
+            UsageGuard.leaveByPin(this);
             Toast.makeText(this, R.string.kid_off_toast, Toast.LENGTH_LONG).show();
             finish();
         });
+        int plan = UsageGuard.schedule(this);
+        addOption(plan == 0 ? getString(R.string.kid_schedule_off) : getString(R.string.kid_schedule_on,
+                String.format("%02d:00", KidsSchedule.startHour(plan)), String.format("%02d:00", KidsSchedule.endHour(plan))),
+                () -> UsageGuard.setSchedule(this, KidsSchedule.next(UsageGuard.schedule(this))));
         addOption(getString(R.string.kid_pick_apps), () -> startActivity(new Intent(this, KidAppsActivity.class)));
         addOption(getString(R.string.kid_change_pin), () -> {
             replacing = true;
             show(Stage.SET_PIN);
         });
         addOption(getString(R.string.kid_close), this::finish);
-        options.getChildAt(0).requestFocus();
+        options.getChildAt(Math.min(keep, options.getChildCount() - 1)).requestFocus();
     }
 
     private void addOption(String label, Runnable action) {
@@ -244,6 +249,9 @@ public final class KidModeActivity extends Activity {
         row.setClickable(true);
         row.setBackgroundResource(R.drawable.settings_choice_bg);
         options.addView(row, new LinearLayout.LayoutParams(-1, dp(52)));
-        row.setOnClickListener(v -> action.run());
+        row.setOnClickListener(v -> {
+            action.run();
+            if (!isFinishing() && stage == Stage.OPTIONS) showOptions();   // the numbers on the rows follow the choice
+        });
     }
 }

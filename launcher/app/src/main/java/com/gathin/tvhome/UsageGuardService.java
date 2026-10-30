@@ -24,6 +24,70 @@ public final class UsageGuardService extends AccessibilityService {
     };
 
     private long lastBounce;
+    private static UsageGuardService running;
+    private android.view.View card;
+
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        running = this;
+    }
+
+    /**
+     * A big card on top of whatever is playing, for eight seconds, that takes no focus and no keys, so the video keeps
+     * running and the remote keeps working. False when the service is not running (the caller falls back to a Toast).
+     */
+    static boolean card(String text) {
+        UsageGuardService service = running;
+        if (service == null) return false;
+        service.handler.post(() -> service.showCard(text));
+        return true;
+    }
+
+    private void showCard(String text) {
+        android.view.WindowManager windows = (android.view.WindowManager) getSystemService(WINDOW_SERVICE);
+        if (windows == null) return;
+        if (card != null) {
+            try {
+                windows.removeView(card);
+            } catch (IllegalArgumentException ignored) {
+                // already gone
+            }
+        }
+        float density = getResources().getDisplayMetrics().density;
+        android.widget.TextView view = new android.widget.TextView(this);
+        view.setText(text);
+        view.setTextSize(30);
+        view.setTextColor(0xFF101419);
+        view.setGravity(android.view.Gravity.CENTER);
+        view.setPadding((int) (36 * density), (int) (20 * density), (int) (36 * density), (int) (20 * density));
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0xF2F5B945);
+        bg.setCornerRadius(28 * density);
+        view.setBackground(bg);
+        android.view.WindowManager.LayoutParams at = new android.view.WindowManager.LayoutParams(
+                android.view.WindowManager.LayoutParams.WRAP_CONTENT, android.view.WindowManager.LayoutParams.WRAP_CONTENT,
+                android.view.WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                android.graphics.PixelFormat.TRANSLUCENT);
+        at.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
+        at.y = (int) (48 * density);
+        try {
+            windows.addView(view, at);
+        } catch (RuntimeException e) {
+            return;
+        }
+        card = view;
+        handler.postDelayed(() -> {
+            if (card != view) return;
+            try {
+                windows.removeView(view);
+            } catch (IllegalArgumentException ignored) {
+                // already gone
+            }
+            card = null;
+        }, 8000);
+    }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -51,6 +115,11 @@ public final class UsageGuardService extends AccessibilityService {
     public void onInterrupt() { }
 
     private void check() {
+        boolean was = UsageGuard.guarding(this);
+        UsageGuard.applySchedule(this);
+        if (was && !UsageGuard.guarding(this)) {   // the window ended: the kids' screen gives way to the normal Home
+            startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
         if (!UsageGuard.isActive(this)) return;
         UsageTracker.update(this, UsageReport.CHILD);
         UsageGuard.checkNotice(this);
@@ -62,6 +131,7 @@ public final class UsageGuardService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        if (running == this) running = null;
         handler.removeCallbacks(tick);
         super.onDestroy();
     }

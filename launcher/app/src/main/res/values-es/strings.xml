@@ -196,4 +196,7 @@
     <string name="tmdb_refresh">Actualizar las películas</string>
     <string name="tmdb_refreshing">Actualizando las películas. Las imágenes nuevas aparecen en un minuto.</string>
     <string name="tmdb_busy">Las películas ya se están actualizando.</string>
+    <string name="kid_schedule_off">Horario automático: apagado</string>
+    <string name="kid_schedule_on">Horario automático: de %1$s a %2$s</string>
+    <string name="usage_kids_busiest">Los niños usan más el %1$s (%2$s)</string>
 </resources>

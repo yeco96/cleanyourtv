@@ -412,6 +412,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updatePanel();
+            UsageGuard.applySchedule(MainActivity.this);
             if (UsageGuard.isActive(MainActivity.this)) {
                 UsageTracker.update(getApplicationContext(), UsageReport.CHILD);
                 UsageGuard.checkNotice(MainActivity.this);
@@ -1039,6 +1040,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        UsageGuard.applySchedule(this);
         if (UsageGuard.isActive(this)) {
             UsageGuard.ensureService(this);
             if (UsageGuard.guarding(this)) {

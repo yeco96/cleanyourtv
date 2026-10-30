@@ -199,4 +199,7 @@
     <string name="tmdb_refresh">רענון הסרטים</string>
     <string name="tmdb_refreshing">הסרטים מתעדכנים. התמונות החדשות יופיעו בעוד דקה.</string>
     <string name="tmdb_busy">הסרטים כבר מתעדכנים.</string>
+    <string name="kid_schedule_off">תזמון אוטומטי: כבוי</string>
+    <string name="kid_schedule_on">תזמון אוטומטי: %1$s עד %2$s</string>
+    <string name="usage_kids_busiest">הילדים משתמשים הכי הרבה ב-%1$s (%2$s)</string>
 </resources>

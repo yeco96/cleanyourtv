@@ -153,4 +153,17 @@
     <string name="tmdb_nokey">no se encontró la clave: ponla en tmdb_key.txt</string>
     <string name="tmdb_failed">el último intento falló (%1$s)</string>
     <string name="tmdb_waiting">esperando la primera descarga</string>
+    <string name="usage_menu">Uso de la TV</string>
+    <string name="usage_title">Uso de la TV</string>
+    <string name="usage_today">Hoy</string>
+    <string name="usage_week">7 días</string>
+    <string name="usage_month">30 días</string>
+    <string name="usage_apps">Apps</string>
+    <string name="usage_nothing">Aún no hay nada registrado. Usa una app y vuelve.</string>
+    <string name="usage_no_permission">El acceso al uso está apagado. Concédelo desde un ordenador con: adb shell appops set %1$s GET_USAGE_STATS allow</string>
+    <string name="usage_child_part">Hija: %1$s</string>
+    <string name="usage_vs_before">%1$s frente al periodo anterior</string>
+    <string name="usage_average">Promedio por día de uso: %1$s</string>
+    <string name="usage_minutes">%1$d min</string>
+    <string name="usage_hours_minutes">%1$d h %2$d min</string>
 </resources>

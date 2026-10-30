@@ -156,4 +156,17 @@
     <string name="tmdb_nokey">לא נמצא מפתח: הניחו אותו ב-tmdb_key.txt</string>
     <string name="tmdb_failed">הניסיון האחרון נכשל (%1$s)</string>
     <string name="tmdb_waiting">ממתין להורדה הראשונה</string>
+    <string name="usage_menu">שימוש בטלוויזיה</string>
+    <string name="usage_title">שימוש בטלוויזיה</string>
+    <string name="usage_today">היום</string>
+    <string name="usage_week">7 ימים</string>
+    <string name="usage_month">30 ימים</string>
+    <string name="usage_apps">אפליקציות</string>
+    <string name="usage_nothing">עדיין לא נרשם דבר. השתמשו באפליקציה וחזרו.</string>
+    <string name="usage_no_permission">הגישה לנתוני השימוש כבויה. אפשר אותה ממחשב: adb shell appops set %1$s GET_USAGE_STATS allow</string>
+    <string name="usage_child_part">הבת: %1$s</string>
+    <string name="usage_vs_before">%1$s לעומת התקופה הקודמת</string>
+    <string name="usage_average">ממוצע ליום שימוש: %1$s</string>
+    <string name="usage_minutes">%1$d ד׳</string>
+    <string name="usage_hours_minutes">%1$d ש׳ %2$d ד׳</string>
 </resources>

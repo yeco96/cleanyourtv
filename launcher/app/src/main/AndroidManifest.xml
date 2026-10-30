@@ -13,6 +13,9 @@
          published (GET only, 6 MB at most); nothing else goes online and nothing is sent. READ_TV_LISTINGS (a runtime
          permission, "TV listings") and READ_EPG_DATA: read what the apps publish to the programme guide (AppContent). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Granted over adb (appops GET_USAGE_STATS): which app was in front, for the TV usage screen. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
@@ -134,6 +137,11 @@
         <!-- Remote Settings button panel (settings_key_panel); own task so the app behind stays put.
              No screenOrientation: a translucent activity may not request one on Android 8.0 (API 26),
              which throws IllegalStateException in onCreate (#1122); a TV is landscape anyway. -->
+        <activity
+            android:name=".UsageActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape" />
         <activity
             android:name=".QuickSettingsActivity"
             android:exported="false"

@@ -1030,6 +1030,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        new Thread(() -> UsageTracker.update(getApplicationContext(), UsageGuard.currentProfile(getApplicationContext()))).start();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -3726,6 +3727,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 if (vendor != null) open(vendor);
             });
         }
+        addSettingsMenuRow(rows, popup, R.string.usage_menu, () -> startActivity(new Intent(this, UsageActivity.class)));
         if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
         if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);

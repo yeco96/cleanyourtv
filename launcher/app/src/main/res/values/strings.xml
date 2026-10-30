@@ -162,4 +162,17 @@
     <string name="tmdb_nokey">no key found: put it in tmdb_key.txt</string>
     <string name="tmdb_failed">the last try failed (%1$s)</string>
     <string name="tmdb_waiting">waiting for the first download</string>
+    <string name="usage_menu">TV usage</string>
+    <string name="usage_title">TV usage</string>
+    <string name="usage_today">Today</string>
+    <string name="usage_week">7 days</string>
+    <string name="usage_month">30 days</string>
+    <string name="usage_apps">Apps</string>
+    <string name="usage_nothing">Nothing recorded yet. Use an app and come back.</string>
+    <string name="usage_no_permission">Usage access is off. Allow it from a computer with: adb shell appops set %1$s GET_USAGE_STATS allow</string>
+    <string name="usage_child_part">Daughter: %1$s</string>
+    <string name="usage_vs_before">%1$s against the period before</string>
+    <string name="usage_average">Average per day of use: %1$s</string>
+    <string name="usage_minutes">%1$d min</string>
+    <string name="usage_hours_minutes">%1$d h %2$d min</string>
 </resources>

@@ -151,4 +151,9 @@
     <string name="game_live">בשידור חי עכשיו</string>
     <string name="continue_watching">המשך צפייה</string>
     <string name="continue_state">המשך צפייה: %1$s</string>
+    <string name="tmdb_state">רקעי TMDb: %1$s</string>
+    <string name="tmdb_ok">%1$d תמונות, עודכן %2$s</string>
+    <string name="tmdb_nokey">לא נמצא מפתח: הניחו אותו ב-tmdb_key.txt</string>
+    <string name="tmdb_failed">הניסיון האחרון נכשל (%1$s)</string>
+    <string name="tmdb_waiting">ממתין להורדה הראשונה</string>
 </resources>

@@ -147,4 +147,9 @@
     <string name="last_opened">Última apertura: %1$s</string>
     <string name="continue_watching">Seguir viendo</string>
     <string name="continue_state">Seguir viendo: %1$s</string>
+    <string name="tmdb_state">Fondos de TMDb: %1$s</string>
+    <string name="tmdb_ok">%1$d imágenes, actualizado %2$s</string>
+    <string name="tmdb_nokey">no se encontró la clave: ponla en tmdb_key.txt</string>
+    <string name="tmdb_failed">el último intento falló (%1$s)</string>
+    <string name="tmdb_waiting">esperando la primera descarga</string>
 </resources>

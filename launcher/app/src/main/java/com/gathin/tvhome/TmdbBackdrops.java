@@ -1,6 +1,7 @@
 package com.gathin.tvhome;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -42,6 +43,11 @@ import java.util.regex.Pattern;
 final class TmdbBackdrops {
     private static final String TAG = "TvHome.Tmdb";
     static final String KEY_FILE = "tmdb_key.txt";
+    /**
+     * The pictures live in a folder of their own, not in wallpapers/: pushing a theme clears wallpapers/, and the
+     * day's films should not go with it.
+     */
+    static final String DIR = "tmdb";
     private static final String PREFS = "tmdb_backdrops";
     private static final String LAST_UPDATE = "last_update_ms";
     private static final long UPDATE_INTERVAL_MS = 24L * 60 * 60 * 1000;
@@ -75,9 +81,10 @@ final class TmdbBackdrops {
         String key = readKey(base);
         if (key == null) {
             Log.i(TAG, "No TMDb key in " + KEY_FILE + ": nothing is fetched.");
+            setStatus(app, STATUS_NO_KEY, 0);
             return;
         }
-        File wallpapers = new File(base, ThemeFiles.WALLPAPERS);
+        File wallpapers = new File(base, DIR);
         boolean due = System.currentTimeMillis() - app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getLong(LAST_UPDATE, 0) > UPDATE_INTERVAL_MS;
         if (!due && WallpaperRotation.images(wallpapers).size() >= MIN_PICTURES) return;
@@ -107,6 +114,36 @@ final class TmdbBackdrops {
         return mixed;
     }
 
+    /**
+     * How the last attempt went, for the line in Launcher settings: OK (with its count and time), no key, or failed.
+     * The values and the preference keys carry "tmdb:" on purpose: AppAdapter resolves drawables by name
+     * (getIdentifier), so the resource shrinker keeps whatever a string constant could name, and plain "ok" or
+     * "failed" kept 47 KB of unused library translations in the APK.
+     */
+    static final String STATUS_OK = "tmdb:ok", STATUS_NO_KEY = "tmdb:nokey", STATUS_FAILED = "tmdb:failed";
+
+    private static void setStatus(Context context, String state, int count) {
+        SharedPreferences.Editor edit = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putString("tmdb:status", state).putLong("tmdb:status_time", System.currentTimeMillis());
+        if (STATUS_OK.equals(state)) edit.putInt("tmdb:status_count", count);
+        edit.apply();
+    }
+
+    /** The last attempt's state, or null before the first one. */
+    static String status(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("tmdb:status", null);
+    }
+
+    /** Pictures the last good download brought. */
+    static int statusCount(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt("tmdb:status_count", 0);
+    }
+
+    /** When the last attempt ended. */
+    static long statusTime(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong("tmdb:status_time", 0);
+    }
+
     /** The key in {@code tmdb_key.txt}, or null when there is no such file or it does not look like a key. */
     static String readKey(File base) {
         File file = new File(base, KEY_FILE);
@@ -131,7 +168,9 @@ final class TmdbBackdrops {
     private static void fetch(Context context, File base, String key, String language, String certification,
                               WallpaperPlayer player) {
         if (!FETCHING.compareAndSet(false, true)) return;
-        File staging = new File(base, "wallpapers_staging");
+        File staging = new File(base, "tmdb_staging");
+        String outcome = STATUS_FAILED;
+        int delivered = 0;
         try {
             if (!online(context)) {
                 Log.i(TAG, "Offline: no fetch.");
@@ -170,7 +209,7 @@ final class TmdbBackdrops {
                 return;
             }
             write(new File(staging, WallpaperCaptions.FILE_NAME), captions);
-            File wallpapers = new File(base, ThemeFiles.WALLPAPERS);
+            File wallpapers = new File(base, DIR);
             if (!wallpapers.isDirectory() && !wallpapers.mkdirs()) return;
             File[] old = wallpapers.listFiles();
             if (old != null) for (File f : old) if (f.isFile()) f.delete();
@@ -179,10 +218,13 @@ final class TmdbBackdrops {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                     .putLong(LAST_UPDATE, System.currentTimeMillis()).apply();
             Log.i(TAG, "TMDb backdrops updated: " + captions.size());
+            outcome = STATUS_OK;
+            delivered = captions.size();
             if (player != null) player.reload(wallpapers);
         } catch (Exception e) {
             Log.w(TAG, "TMDb fetch failed: " + e.getClass().getSimpleName());
         } finally {
+            setStatus(context, outcome, delivered);
             deleteTree(staging);
             FETCHING.set(false);
         }

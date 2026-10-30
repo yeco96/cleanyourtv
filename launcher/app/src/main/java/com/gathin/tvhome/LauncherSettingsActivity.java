@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.LinearLayout;
@@ -301,6 +302,7 @@ public final class LauncherSettingsActivity extends Activity {
                 getString(animations ? R.string.on : R.string.off)));
         continueChoice.setText(getString(R.string.continue_state,
                 getString(continueRow ? R.string.on : R.string.off)));
+        showTmdbStatus();
         advancedChoice.setText(getString(R.string.advanced_effects_state,
                 getString(advancedEffects ? R.string.on : R.string.off)));
         advancedChoice.setEnabled(animations);
@@ -312,6 +314,28 @@ public final class LauncherSettingsActivity extends Activity {
                         : getString(R.string.wallpaper_theme_default)));
         openOnStartChoice.setText(getString(R.string.open_on_start_state, openOnStartLabel()));
         followThemeChoice.setSelected(!hasOnTvChoices());
+    }
+
+    /**
+     * With tmdb_backdrops, a line under the rows saying how the daily download stands: how many pictures and when, or
+     * why there are none (no key, or the last try failed). Not a row: nothing here can be changed on the TV.
+     */
+    private void showTmdbStatus() {
+        TextView status = findViewById(R.id.tmdbStatus);
+        if (!Config.load(this).tmdbBackdrops) {
+            status.setVisibility(View.GONE);
+            return;
+        }
+        String state = TmdbBackdrops.status(this);
+        CharSequence when = DateUtils.getRelativeTimeSpanString(TmdbBackdrops.statusTime(this),
+                System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
+        String text;
+        if (state == null) text = getString(R.string.tmdb_waiting);
+        else if (TmdbBackdrops.STATUS_NO_KEY.equals(state)) text = getString(R.string.tmdb_nokey);
+        else if (TmdbBackdrops.STATUS_OK.equals(state)) text = getString(R.string.tmdb_ok, TmdbBackdrops.statusCount(this), when);
+        else text = getString(R.string.tmdb_failed, when);
+        status.setText(getString(R.string.tmdb_state, text));
+        status.setVisibility(View.VISIBLE);
     }
 
     private boolean hasOnTvChoices() {

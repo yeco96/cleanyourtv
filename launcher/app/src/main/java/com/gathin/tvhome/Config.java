@@ -684,12 +684,18 @@ final class Config {
             wallpapers.addAll(WallpaperRotation.images(new File(dir, "wallpapers")));
         }
         if (wallpapers.isEmpty() && wallpaper != null) wallpapers.add(wallpaper);
+        // tmdb_backdrops: the day's films come from their own folder, which a theme push never clears, whatever the
+        // theme carries in wallpapers/.
+        if (tmdbBackdrops && dir != null && wallpaperEnabled) {
+            wallpapers.clear();
+            wallpapers.addAll(WallpaperRotation.images(new File(dir, TmdbBackdrops.DIR)));
+        }
         // An on-TV wallpaper pick overrides the theme: a filename from the wallpapers/
         // collection, or "none". Unset means the theme decides (off by default).
         String wallpaperChoice = choices.getString(WALLPAPER_CHOICE_KEY, null);
         List<File> chosen = WallpaperRotation.chosen(dir == null ? Collections.emptyList()
                 : WallpaperRotation.images(new File(dir, "wallpapers")), wallpaper, wallpaperChoice);
-        if (chosen != null) {
+        if (chosen != null && !tmdbBackdrops) {
             wallpapers.clear();
             wallpapers.addAll(chosen);
             wallpaper = chosen.isEmpty() ? null : chosen.get(0);

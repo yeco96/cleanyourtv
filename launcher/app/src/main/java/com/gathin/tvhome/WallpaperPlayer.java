@@ -104,8 +104,13 @@ final class WallpaperPlayer {
         String collection = collectionKey(files);
         if (!collection.equals(preferences.getString("collection", ""))) {
             preferences.edit().putString("collection", collection)
-                    .remove("image").remove("changed").apply();
+                    .remove("image").remove("changed").remove("shown").apply();
         }
+        // The shuffle's deck survives a restart of Home, so a picture does not come back because the launcher did.
+        shownThisRound.addAll(preferences.getStringSet("shown", Collections.emptySet()));
+        Set<String> present = new java.util.HashSet<>();
+        for (File file : files) present.add(file.getName());
+        shownThisRound.retainAll(present);
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         width = metrics.widthPixels;
         height = metrics.heightPixels;
@@ -139,9 +144,10 @@ final class WallpaperPlayer {
 
     /** The next picture: the sorted order for wallpaper_order sequential, else a shuffle that does not repeat. */
     private File chooseNext(List<File> playable, String previous) {
-        return WallpaperRotation.ORDER_SEQUENTIAL.equals(order)
-                ? WallpaperRotation.next(playable, previous)
-                : WallpaperRotation.pickFresh(playable, shownThisRound, previous, random);
+        if (WallpaperRotation.ORDER_SEQUENTIAL.equals(order)) return WallpaperRotation.next(playable, previous);
+        File picked = WallpaperRotation.pickFresh(playable, shownThisRound, previous, random);
+        if (picked != null) preferences.edit().putStringSet("shown", new java.util.HashSet<>(shownThisRound)).apply();
+        return picked;
     }
 
     /**
@@ -246,7 +252,10 @@ final class WallpaperPlayer {
             if (closed) return;
             files.clear();
             files.addAll(fresh);
-            shownThisRound.clear();
+            // Pictures that are gone leave the deck; the ones that stay keep their place in it.
+            Set<String> kept = new java.util.HashSet<>();
+            for (File file : fresh) kept.add(file.getName());
+            shownThisRound.retainAll(kept);
             movies = freshMovies;
             attach();
             preferences.edit().remove("image").remove("changed").apply();

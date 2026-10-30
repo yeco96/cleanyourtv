@@ -9,6 +9,12 @@
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Seguir viendo only. INTERNET: ContinueRow fetches the poster of each programme from the address its own app
+         published (GET only, 6 MB at most); nothing else goes online and nothing is sent. READ_TV_LISTINGS (a runtime
+         permission, "TV listings") and READ_EPG_DATA: read what the apps publish to the programme guide (AppContent). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
+    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
          runtime: build-and-install grants it with pm grant, so lint's Android 12 "ask for COARSE with
          FINE" rule does not apply here. -->

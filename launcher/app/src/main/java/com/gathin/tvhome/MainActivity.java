@@ -458,6 +458,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         liveTvInputId = cfg.liveTvInputId;
         appLibraryEnabled = cfg.appLibrary;
         tileMenuEnabled = cfg.tileMenu;
+        continueEnabled = cfg.continueRow;
         inputAction = cfg.inputAction;
         inputSources = cfg.inputSources;
         inputUriScheme = cfg.inputUriScheme;
@@ -639,6 +640,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames, cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding, cfg.dockBand,
                 singleRow, cfg.dockBandAll));
         if (cfg.fadeRows) TopFade.attach(grid, 48 * density);
+        // Seguir viendo: the apps' "Continue watching" as a row between the dock and the app rows.
+        appContent = new AppContent(this);
+        continueRow = new ContinueRow(this, continueHost, animations && !reducedMotion);
+        continueRow.view.setPadding(grid.getPaddingLeft(), 0, grid.getPaddingRight(), 0);
+        continueRow.view.setVisibility(View.GONE);
+        continueRow.setFocusEnabled(false);   // its cards take focus only when Down or Up goes into the row
+        ((FrameLayout) grid.getParent()).addView(continueRow.view, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP));
+        grid.addItemDecoration(continueGap);
         // Reduced motion: the tiles are simply there, with no entrance (reloadApps skips it there too).
         if (animations && !reducedMotion) {
             grid.setLayoutAnimation(new LayoutAnimationController(
@@ -660,6 +670,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             int inner = (r - l) - grid.getPaddingLeft() - grid.getPaddingRight();
             int tileW = AppAdapter.tileWidthPx(inner, h, COLUMNS, rowsBelowDock, cfg.dockTitle, cfg.dockRow, density);
             int itemH = AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(tileW), density);
+            continueRow.setSizes(inner / COLUMNS, tileW, AppAdapter.tileHeightPx(tileW));
             int dockRow = itemH + (int) (AppAdapter.DOCK_EXTRA_DP * density);   // item height plus DockDecoration offsets
             int gridRows = itemH * rowsBelowDock;
             // Keep the hero below the header when the library is enabled on a short screen,
@@ -697,12 +708,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Cold start or column count > 4: the first focus can run before the grid has its final width or
             // padding, leaving the glass at the XML design size until a key is pressed.
             grid.post(this::refitGlass);
+            grid.post(this::placeContinueRow);
         });
 
         // Keep the glass glued to its tile while the grid scrolls.
         grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                if (dy != 0) placeContinueRow();
                 if (!glassShown) return;
                 glassTargetY -= dy;
                 glassScrollShift -= dy;
@@ -1040,6 +1053,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             default:
                 break;
         }
+        askForTvListings();   // also on the way back: Home is rarely created again
+        if (continueEnabled && appContent != null) appContent.refresh(this::onContentRead);
         if (openLiveTvAfterBoot()) return;
         updateGreeting();
         updatePanel();
@@ -1426,6 +1441,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         orderAtStart = adapter.movableKeys();
         glass.setAccent(REORDER_ACCENT);
         btnReorder.setActivated(true);
+        // The Seguir viendo row (not movable) steps aside while tiles are carried.
+        grid.invalidateItemDecorations();
+        placeContinueRow();
         return true;
     }
 
@@ -1570,6 +1588,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         adapter.setReordering(false);
         glass.setAccent(festive ? festival.accentColor() : 0);
         btnReorder.setActivated(false);
+        // The Seguir viendo row comes back.
+        grid.invalidateItemDecorations();
+        grid.post(this::placeContinueRow);
         List<String> keys = adapter.movableKeys();
         List<String> before = orderAtStart;
         orderAtStart = null;
@@ -1704,6 +1725,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public void onTileFocused(int position, View card) {
         lastFocused = position;
         lastFocusedKey = adapter.keyAt(position);
+        // A tile has the focus: the Seguir viendo cards take none, or Up from the dock finds them, not the top bar.
+        if (continueRow != null) continueRow.setFocusEnabled(false);
         // Focus restored before the first layout (cold start): the tile has no size yet, and the glass
         // would be sized to 2*pad. Run again once the tile is laid out.
         if (card.getWidth() == 0) {
@@ -2352,8 +2375,20 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
             if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
+            if (continueShown() && position < 2 * COLUMNS) {
+                continueRow.setFocusEnabled(true);
+                continueRow.focusColumn(position - COLUMNS);   // the first app row: up into Seguir viendo
+                grid.playSoundEffect(SoundEffectConstants.NAVIGATION_UP);
+                return true;
+            }
             target = position - COLUMNS;
         } else {
+            if (position < COLUMNS && continueShown()) {
+                continueRow.setFocusEnabled(true);
+                continueRow.focusColumn(position);   // the dock: down into Seguir viendo
+                grid.playSoundEffect(SoundEffectConstants.NAVIGATION_DOWN);
+                return true;
+            }
             int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
             if (position >= lastRowStart) {
                 if (adapter.isLibraryAt(count)) focusLibrary();
@@ -2366,6 +2401,137 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         grid.playSoundEffect(keyCode == KeyEvent.KEYCODE_DPAD_UP
                 ? SoundEffectConstants.NAVIGATION_UP : SoundEffectConstants.NAVIGATION_DOWN);
         return true;
+    }
+
+    // ---- Seguir viendo ---------------------------------------------------------------------------
+
+    private static final String TV_LISTINGS = "android.permission.READ_TV_LISTINGS";
+    private static final int TV_LISTINGS_REQUEST = 41;
+    private static boolean askedTvListings;
+
+    /** What the apps publish to the programme guide: their "Continue watching" entries. */
+    private AppContent appContent;
+    private ContinueRow continueRow;
+    /** config continue_row: off, the guide is never read and no poster is downloaded. */
+    private boolean continueEnabled;
+
+    /**
+     * Reading other apps' rows needs the TV listings permission, a runtime one. It survives updates, but a launcher
+     * installed from scratch starts without it. Home asks once per launch with the TV's own dialog; denied, the row
+     * simply stays away.
+     */
+    private void askForTvListings() {
+        if (!continueEnabled || askedTvListings || checkSelfPermission(TV_LISTINGS) == PackageManager.PERMISSION_GRANTED) return;
+        askedTvListings = true;
+        requestPermissions(new String[]{TV_LISTINGS}, TV_LISTINGS_REQUEST);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == TV_LISTINGS_REQUEST && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED
+                && appContent != null) {
+            appContent.refresh(this::onContentRead);
+        }
+    }
+
+    /** The row is there: the dock layout and at least one programme to resume. */
+    private boolean continueShown() {
+        return continueEnabled && dockRow && !singleRow && !reordering && continueRow != null && continueRow.size() > 0;
+    }
+
+    /** Room for the row above the first app row, so the apps start below it. */
+    private final RecyclerView.ItemDecoration continueGap = new RecyclerView.ItemDecoration() {
+        @Override
+        public void getItemOffsets(@NonNull Rect out, @NonNull View v, @NonNull RecyclerView parent,
+                                   @NonNull RecyclerView.State state) {
+            int pos = parent.getChildAdapterPosition(v);
+            if (continueShown() && pos >= COLUMNS && pos < 2 * COLUMNS) out.top = continueRow.height();
+        }
+    };
+
+    private final ContinueRow.Host continueHost = new ContinueRow.Host() {
+        @Override
+        public void onContinueFocused(int index) {
+            hideGlass();
+            hideHero();
+            // With no app row visible under the dock the row sits below the screen's edge: bring it in.
+            grid.post(() -> {
+                int over = Math.round(continueRow.view.getTranslationY()) + continueRow.view.getHeight() - grid.getHeight();
+                if (over > 0) grid.smoothScrollBy(0, over);
+            });
+        }
+
+        @Override
+        public void onContinueVertical(boolean up, int column) {
+            if (up) focusTile(Math.min(column, Math.max(0, adapter.dockFilled() - 1)));
+            else focusTile(Math.min(COLUMNS + column, adapter.appCount() - 1));
+            continueRow.setFocusEnabled(false);   // the focus has left the row
+            grid.playSoundEffect(up ? SoundEffectConstants.NAVIGATION_UP : SoundEffectConstants.NAVIGATION_DOWN);
+        }
+
+        @Override
+        public void onContinueOpen(AppContent.Item item) {
+            openContent(item);
+        }
+    };
+
+    /** The apps' programmes were read again: refill the row and make room for it (or take the room away). */
+    private void onContentRead() {
+        if (isDestroyed() || appContent == null) return;
+        boolean was = continueShown();
+        continueRow.setItems(appContent.continueWatching());
+        if (was != continueShown() || continueShown()) {
+            grid.invalidateItemDecorations();
+            grid.post(this::placeContinueRow);
+        }
+    }
+
+    /** Keeps the row in the room continueGap leaves above the first app row, wherever the grid has scrolled. */
+    private void placeContinueRow() {
+        if (!continueShown()) {
+            continueRow.view.setVisibility(View.GONE);
+            return;
+        }
+        RecyclerView.ViewHolder first = grid.findViewHolderForAdapterPosition(COLUMNS);
+        float y;
+        if (first != null) {
+            y = first.itemView.getTop() - continueRow.height();
+        } else {
+            RecyclerView.ViewHolder dock = grid.findViewHolderForAdapterPosition(0);
+            if (dock == null) {
+                continueRow.view.setVisibility(View.INVISIBLE);
+                return;
+            }
+            y = dock.itemView.getBottom() + 12 * density;
+        }
+        continueRow.view.setVisibility(View.VISIBLE);
+        continueRow.view.setTranslationY(y);
+    }
+
+    /**
+     * Opens a programme where it was left: the app's own link from its "Continue watching" entry, else the app. The
+     * link comes from another app, so it may only start an activity: no selector, no granted URI permissions.
+     */
+    private void openContent(AppContent.Item item) {
+        Intent i = null;
+        if (item.intentUri != null) {
+            try {
+                i = Intent.parseUri(item.intentUri, Intent.URI_INTENT_SCHEME);
+                i.setSelector(null);
+                i.setFlags(i.getFlags() & ~(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION));
+            } catch (Exception e) {
+                i = null;
+            }
+        }
+        if (i == null) i = getPackageManager().getLeanbackLaunchIntentForPackage(item.pkg);
+        if (i == null) i = getPackageManager().getLaunchIntentForPackage(item.pkg);
+        if (i == null) {
+            Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        open(i);
     }
 
     @Override public void onLibraryFocused() {

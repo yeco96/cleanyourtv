@@ -34,6 +34,7 @@ public final class LauncherSettingsActivity extends Activity {
     private final TextView[] dockChoices = new TextView[DOCK_OPACITIES.length];
     private TextView wallpaperChoice;
     private TextView animationsChoice;
+    private TextView continueChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
     private TextView openOnStartChoice;
@@ -41,6 +42,7 @@ public final class LauncherSettingsActivity extends Activity {
     private int rowsBelowDock;
     private int dockOpacity;
     private boolean animations;
+    private boolean continueRow;
     private boolean advancedEffects;
 
     @Override
@@ -59,6 +61,7 @@ public final class LauncherSettingsActivity extends Activity {
         rowsBelowDock = config.rowsBelowDock;
         dockOpacity = config.dockOpacity;
         animations = config.animations;
+        continueRow = config.continueRow;
         advancedEffects = config.animations && config.advancedEffects;
 
         int[] ids = {R.id.columns4, R.id.columns5, R.id.columns6, R.id.columns7};
@@ -117,6 +120,13 @@ public final class LauncherSettingsActivity extends Activity {
             changed();
             refresh();
         });
+        continueChoice = findViewById(R.id.continueChoice);
+        continueChoice.setOnClickListener(v -> {
+            continueRow = !continueRow;
+            choices.edit().putBoolean("continue_row", continueRow).apply();
+            changed();
+            refresh();
+        });
         advancedChoice = findViewById(R.id.advancedChoice);
         advancedChoice.setOnClickListener(v -> {
             if (advancedEffects) {
@@ -138,7 +148,7 @@ public final class LauncherSettingsActivity extends Activity {
         followThemeChoice = findViewById(R.id.followThemeChoice);
         followThemeChoice.setOnClickListener(v -> {
             if (!hasOnTvChoices()) return;
-            choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
+            choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations").remove("continue_row")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
                     .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).commit();
             Config current = Config.load(this);
@@ -146,6 +156,7 @@ public final class LauncherSettingsActivity extends Activity {
             rowsBelowDock = current.rowsBelowDock;
             dockOpacity = current.dockOpacity;
             animations = current.animations;
+            continueRow = current.continueRow;
             advancedEffects = current.animations && current.advancedEffects;
             changed();
             refresh();
@@ -288,6 +299,8 @@ public final class LauncherSettingsActivity extends Activity {
         }
         animationsChoice.setText(getString(R.string.animations_state,
                 getString(animations ? R.string.on : R.string.off)));
+        continueChoice.setText(getString(R.string.continue_state,
+                getString(continueRow ? R.string.on : R.string.off)));
         advancedChoice.setText(getString(R.string.advanced_effects_state,
                 getString(advancedEffects ? R.string.on : R.string.off)));
         advancedChoice.setEnabled(animations);
@@ -303,7 +316,7 @@ public final class LauncherSettingsActivity extends Activity {
 
     private boolean hasOnTvChoices() {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
-                || choices.contains("animations") || choices.contains("advanced_effects")
+                || choices.contains("animations") || choices.contains("continue_row") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
                 || choices.contains(OpenOnStart.KEY);
     }

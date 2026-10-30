@@ -38,6 +38,7 @@ Click **Settings** for the TV's own settings. Hold OK on it for its menu:
 
 - **Launcher settings**. With `launcher_settings_button` a click opens those instead, and the menu
   leaves the row out.
+- **TV settings**, with `settings_key_panel`: the gear opens this menu with one OK, and this row opens the TV's own settings.
 - **Native settings**, where the TV ships a settings app of its own beside Android's - Xiaomi China,
   TCL/FFALCON and Fire OS are in `settings_fallback_components` - because that app holds pages
   Android's has no row for, such as Xiaomi's Account & Security with the ADB switch.

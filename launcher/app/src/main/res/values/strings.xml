@@ -222,4 +222,7 @@
     <string name="kid_today_of_extra">Today: %1$s of %2$s (+%3$s extra)</string>
     <string name="kid_remove_extra">Remove today\'s extra time (%1$d min)</string>
     <string name="kid_hello">Hi there!</string>
+    <string name="tmdb_updated">Movies updated: %1$d new pictures</string>
+    <string name="tmdb_update_failed">Could not update the movies. Check the internet connection.</string>
+    <string name="tmdb_no_key">There is no TMDb key on this TV, so there is nothing to update.</string>
 </resources>

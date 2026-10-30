@@ -243,6 +243,11 @@ final class WallpaperPlayer {
         }
     }
 
+    /** Home's minute check: starts the daily refresh once the date has changed. */
+    void checkMovies() {
+        if (tmdb) TmdbBackdrops.checkAndUpdate(root.getContext(), this, config);
+    }
+
     /** True while the pictures are the TMDb movies. */
     boolean usesMovies() {
         return tmdb;

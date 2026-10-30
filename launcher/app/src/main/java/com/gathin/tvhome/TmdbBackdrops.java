@@ -21,6 +21,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +29,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 import java.util.regex.Pattern;
 
 /**
@@ -50,11 +54,15 @@ final class TmdbBackdrops {
     static final String DIR = "tmdb";
     private static final String PREFS = "tmdb_backdrops";
     private static final String LAST_UPDATE = "last_update_ms";
-    private static final long UPDATE_INTERVAL_MS = 24L * 60 * 60 * 1000;
+    private static final String LAST_DAY = "last_day";
+    private static final String LAST_ATTEMPT = "last_attempt_ms";
+    /** An automatic refresh that did not go through (offline, a bad key) waits this long before trying again. */
+    private static final long RETRY_MS = 15L * 60 * 1000;
     private static final int POPULAR = 12;
     private static final int FAMILY = 8;
     private static final int MIN_PICTURES = 5;
-    private static final int MAX_PAGES = 3;
+    /** Pages of each list a refresh draws from: the pictures are picked at random among all of them, so a refresh brings other films. */
+    private static final int POOL_PAGES = 6;
     private static final int MAX_IMAGE_BYTES = 4 * 1024 * 1024;
     private static final int MAX_JSON_BYTES = 512 * 1024;
     private static final int CONNECT_TIMEOUT_MS = 10_000;
@@ -70,7 +78,29 @@ final class TmdbBackdrops {
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final AtomicBoolean FETCHING = new AtomicBoolean(false);
 
+    /** True from the menu's refresh until it ends: only then the result is announced with a message. */
+    private static final AtomicBoolean MANUAL = new AtomicBoolean(false);
+
     private TmdbBackdrops() { }
+
+    /** Today's date, the key of the daily refresh: the pictures are renewed once the date changes. */
+    private static String today() {
+        return java.time.LocalDate.now().toString();
+    }
+
+    /** A refresh is due when the day is not the one of the last refresh, or too few pictures are left. */
+    static boolean due(String lastDay, String today, int pictures) {
+        return pictures < MIN_PICTURES || !today.equals(lastDay);
+    }
+
+    /** An automatic try may run again after {@link #RETRY_MS}. */
+    static boolean retryAllowed(long now, long lastAttempt) {
+        return now - lastAttempt >= RETRY_MS || now < lastAttempt;
+    }
+
+    private static void announce(Context context, String text) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, text, Toast.LENGTH_LONG).show());
+    }
 
     /** Starts a refresh in the background when one is due, there is a key and the TV is online. */
     static void checkAndUpdate(Context context, WallpaperPlayer player, Config config) {
@@ -82,12 +112,16 @@ final class TmdbBackdrops {
         if (key == null) {
             Log.i(TAG, "No TMDb key in " + KEY_FILE + ": nothing is fetched.");
             setStatus(app, STATUS_NO_KEY, 0);
+            if (MANUAL.getAndSet(false)) announce(app, app.getString(R.string.tmdb_no_key));
             return;
         }
         File wallpapers = new File(base, DIR);
-        boolean due = System.currentTimeMillis() - app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getLong(LAST_UPDATE, 0) > UPDATE_INTERVAL_MS;
-        if (!due && WallpaperRotation.images(wallpapers).size() >= MIN_PICTURES) return;
+        SharedPreferences prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        boolean manual = MANUAL.get();
+        if (!manual && !retryAllowed(now, prefs.getLong(LAST_ATTEMPT, 0))) return;
+        if (!due(prefs.getString(LAST_DAY, ""), today(), WallpaperRotation.images(wallpapers).size())) return;
+        prefs.edit().putLong(LAST_ATTEMPT, now).apply();
         String language = language(config.tmdbLanguage);
         String certification = certification(config.tmdbMaxCertification);
         EXECUTOR.execute(() -> fetch(app, base, key, language, certification, player));
@@ -96,7 +130,8 @@ final class TmdbBackdrops {
     /** The menu's refresh: forgets when the last one was and starts one now. False when one is already running. */
     static boolean refreshNow(Context context, WallpaperPlayer player, Config config) {
         if (FETCHING.get()) return false;
-        context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong(LAST_UPDATE, 0).apply();
+        MANUAL.set(true);
+        context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(LAST_DAY, "").apply();
         checkAndUpdate(context, player, config);
         return true;
     }
@@ -224,7 +259,7 @@ final class TmdbBackdrops {
             File[] fresh = staging.listFiles();
             if (fresh != null) for (File f : fresh) f.renameTo(new File(wallpapers, f.getName()));
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                    .putLong(LAST_UPDATE, System.currentTimeMillis()).apply();
+                    .putLong(LAST_UPDATE, System.currentTimeMillis()).putString(LAST_DAY, today()).apply();
             Log.i(TAG, "TMDb backdrops updated: " + captions.size());
             outcome = STATUS_OK;
             delivered = captions.size();
@@ -233,19 +268,23 @@ final class TmdbBackdrops {
             Log.w(TAG, "TMDb fetch failed: " + e.getClass().getSimpleName());
         } finally {
             setStatus(context, outcome, delivered);
+            if (MANUAL.getAndSet(false)) {
+                announce(context, STATUS_OK.equals(outcome) ? context.getString(R.string.tmdb_updated, delivered)
+                        : context.getString(R.string.tmdb_update_failed));
+            }
             deleteTree(staging);
             FETCHING.set(false);
         }
     }
 
-    /** Up to {@code want} movies from the first pages of this list that have a backdrop and a real overview. */
+    /** Up to {@code want} movies picked at random from the first pages of this list, those with a backdrop and a real overview. */
     private static List<JSONObject> pick(String url, int want, Set<Integer> seen) {
-        List<JSONObject> picked = new ArrayList<>();
-        for (int page = 1; page <= MAX_PAGES && picked.size() < want; page++) {
+        List<JSONObject> pool = new ArrayList<>();
+        for (int page = 1; page <= POOL_PAGES; page++) {
             JSONObject json = json(url + "&page=" + page);
             JSONArray results = json == null ? null : json.optJSONArray("results");
             if (results == null) continue;
-            for (int i = 0; i < results.length() && picked.size() < want; i++) {
+            for (int i = 0; i < results.length(); i++) {
                 JSONObject movie = results.optJSONObject(i);
                 if (movie == null) continue;
                 int id = movie.optInt("id");
@@ -253,8 +292,14 @@ final class TmdbBackdrops {
                 boolean usable = id > 0 && backdrop.startsWith("/") && backdrop.matches("/[A-Za-z0-9._-]+")
                         && movie.optString("overview").trim().length() >= MIN_OVERVIEW
                         && !movie.optString("title").trim().isEmpty();
-                if (usable && seen.add(id)) picked.add(movie);
+                if (usable) pool.add(movie);
             }
+        }
+        Collections.shuffle(pool);
+        List<JSONObject> picked = new ArrayList<>();
+        for (JSONObject movie : pool) {
+            if (picked.size() >= want) break;
+            if (seen.add(movie.optInt("id"))) picked.add(movie);
         }
         return picked;
     }

@@ -1,6 +1,8 @@
 package com.gathin.tvhome;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +11,21 @@ import java.util.List;
 import org.junit.Test;
 
 public class TmdbBackdropsTest {
+
+    @Test
+    public void theMoviesAreRenewedWhenTheDayChangesOrTooFewAreLeft() {
+        assertTrue(TmdbBackdrops.due("2026-10-29", "2026-10-30", 20));
+        assertTrue(TmdbBackdrops.due("", "2026-10-30", 20));
+        assertFalse(TmdbBackdrops.due("2026-10-30", "2026-10-30", 20));
+        assertTrue(TmdbBackdrops.due("2026-10-30", "2026-10-30", 2));
+    }
+
+    @Test
+    public void anAutomaticRetryWaitsFifteenMinutes() {
+        assertFalse(TmdbBackdrops.retryAllowed(10 * 60_000L, 0 + 5 * 60_000L));
+        assertTrue(TmdbBackdrops.retryAllowed(20 * 60_000L, 5 * 60_000L));
+        assertTrue(TmdbBackdrops.retryAllowed(1_000L, 99_000_000L));   // the clock went back
+    }
 
     @Test
     public void aGoodLanguageIsKeptAndABadOneFallsBackToTheTvs() {

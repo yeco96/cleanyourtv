@@ -423,6 +423,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (festive) updateWifiLabel();
             sky.update();
             wallpaperPlayer.update();
+            wallpaperPlayer.checkMovies();   // the movies are renewed when the day changes
             handler.postDelayed(this, MINUTE_MS);
         }
     };
@@ -806,7 +807,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_home_settings_pill, 0, 0, 0);
         }
         btnSettings.setOnClickListener(v -> {
-            if (launcherSettingsButton) startActivityForResult(
+            if (settingsKeyPanel) showSettingsMenu();   // settings_key_panel: one OK on the gear opens the menu holding OK opens
+            else if (launcherSettingsButton) startActivityForResult(
                     new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
             else open(systemIntent(Settings.ACTION_SETTINGS));
         });
@@ -1353,12 +1355,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * or switched off by a force-stop) the stock launcher that used to handle the key is gone, and the button did
      * nothing even on Home.
      */
+    /** True when no edit mode is on, so a menu can open over Home. */
+    private boolean reorderIdle() {
+        return !reordering && !dockEditing && cardPrompt == null;
+    }
+
     private boolean handleSettingsKey(KeyEvent event) {
         for (int code : settingsKeycodes) {
             if (event.getKeyCode() != code) continue;
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-                open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
-                        : systemIntent(Settings.ACTION_SETTINGS));
+                if (settingsKeyPanel && reorderIdle()) {
+                    // On Home the key opens the menu that holding OK on the gear opens; pressed again it closes it.
+                    if (openPopup != null) openPopup.dismiss();
+                    else showSettingsMenu();
+                } else if (settingsKeyPanel) {
+                    open(new Intent(this, QuickSettingsActivity.class));
+                } else {
+                    open(systemIntent(Settings.ACTION_SETTINGS));
+                }
             }
             return true;
         }
@@ -3756,6 +3770,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
+        // With settings_key_panel the gear opens this menu instead of the TV's settings, so the TV's settings are a row here.
+        if (settingsKeyPanel) addSettingsMenuRow(rows, popup, R.string.tv_settings, () -> open(systemIntent(Settings.ACTION_SETTINGS)));
         if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         // Firmware that ships its own settings app next to the AOSP one (Xiaomi China is one): the

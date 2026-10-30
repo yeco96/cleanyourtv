@@ -212,4 +212,7 @@
     <string name="kid_today_of_extra">Hoy: %1$s de %2$s (+%3$s extra)</string>
     <string name="kid_remove_extra">Quitar el tiempo extra de hoy (%1$d min)</string>
     <string name="kid_hello">¡Hola!</string>
+    <string name="tmdb_updated">Películas actualizadas: %1$d imágenes nuevas</string>
+    <string name="tmdb_update_failed">No se pudieron actualizar las películas. Revisa la conexión a internet.</string>
+    <string name="tmdb_no_key">No hay clave de TMDb en esta TV, así que no hay nada que actualizar.</string>
 </resources>

@@ -1,4 +1,5 @@
 {
+    "settings_key_panel": true,
     "live_tv_package": "com.mediatek.wwtv.tvcenter",
     "dock_apps": [
         "com.netflix.ninja",

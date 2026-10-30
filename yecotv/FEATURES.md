@@ -151,6 +151,28 @@ appops set com.gathin.tvhome GET_USAGE_STATS allow
 El instalador (`launcher\build-and-install.ps1 -InputKeyService -HomeKeyService`) reescribe la lista de servicios de
 accesibilidad; el launcher vuelve a encender el de la guardia solo al abrir el Home con el modo activo.
 
+## Ajustes de las TVs fuera del launcher
+
+Cambios hechos en el sistema de una TV, no en el código. Cada uno se puede deshacer con el comando indicado.
+
+### La TV se apagaba sola a los segundos de encenderla (TV 2)
+
+- **Síntoma:** la primera vez del día que se enciende, a los pocos segundos se apaga; al volver a encenderla ya no
+  se repite. Pasaba también antes de este launcher, y en las dos TVs.
+- **Causa encontrada:** el registro de la TV 2 (`logcat -d -v time | grep "Going to sleep due to"`) muestra
+  `Going to sleep due to hdmi`, unos 21 s después de pulsar el botón de encendido, en el servicio de energía de Xiaomi
+  (`MitvPowerManagerService`, "go to str direct for reason = 5"). Es HDMI-CEC: un aparato conectado por HDMI manda la
+  orden de apagado. No viene del launcher ni de una app. Las otras apagadas del día eran `power_button`.
+- **Cambio:** HDMI-CEC desactivado en la TV 2 (no hay nada útil conectado por HDMI).
+  `settings put global hdmi_control_enabled 0`. Ya estaban en 0 `hdmi_control_auto_wakeup_enabled` y
+  `hdmi_control_auto_device_off_enabled`.
+- **Deshacer:** `settings put global hdmi_control_enabled 1`.
+- **Por confirmar:** que mañana, en el primer encendido del día, ya no se apague. Si se apaga, el motivo que salga en el
+  registro será otro y hay que buscarlo ahí. En la TV 1 no hay un evento así en el registro actual; allí hay además una
+  app de temporizador de sueño (`sleeptimer`) activa como servicio de accesibilidad, a revisar si se repite.
+- **No confundir con** el reloj de reposo del launcher (`home_idle_clock_minutes`, 2 minutos en el tema de la TV 2): es
+  una pantalla de reloj oscura, no un apagado.
+
 ## Diferencias con el original
 
 El original pide que el launcher se mantenga sin red ni servicios. Este fork **las rompe a propósito**:

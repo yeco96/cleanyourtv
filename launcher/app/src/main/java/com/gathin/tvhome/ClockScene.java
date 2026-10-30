@@ -20,6 +20,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -59,6 +60,8 @@ final class ClockScene {
     private long rotationMs;
     private long shownMs;
     private String order;
+    /** The pictures this round of the shuffle has shown: every one comes once before any comes back. */
+    private final Set<String> shown = new java.util.HashSet<>();
     private Map<String, Set<String>> moods;
     private String latitude, longitude;
 
@@ -99,6 +102,8 @@ final class ClockScene {
     void stop() {
         handler.removeCallbacksAndMessages(null);   // the tick and any glow steps still queued
         content.animate().cancel();
+        ambient.animate().cancel();   // a cross-fade cut short must not leave the picture half transparent
+        ambient.setAlpha(1f);
         wallpaperGeneration++;   // a decode still running must not attach its picture to a stopped scene
     }
 
@@ -137,9 +142,14 @@ final class ClockScene {
             File current = WallpaperRotation.find(rotation, shown);
             wallpaperFile = current != null ? current : rotation.get(0);
             // Home only rotates while it is visible, so the screensaver carries the rotation on
-            // itself; without this it holds one picture for as long as it is up.
-            rotationMs = cfg.wallpaperRotationMinutes * 60_000L;
+            // itself; without this it holds one picture for as long as it is up. TMDb films change once a minute
+            // here, with the clock: Home's 25 seconds would be restless for a screen nobody is touching.
+            rotationMs = cfg.tmdbBackdrops ? MOVE_MS : cfg.wallpaperRotationMinutes * 60_000L;
             order = cfg.wallpaperOrder;
+            // The deck Home keeps, so the screensaver goes on from it and a film does not come back before the rest.
+            this.shown.addAll(ctx.getSharedPreferences("wallpaper_rotation", Context.MODE_PRIVATE)
+                    .getStringSet("shown", Collections.emptySet()));
+            this.shown.add(wallpaperFile.getName());
             moods = cfg.wallpaperMoods;
             latitude = moods.isEmpty() ? "" : ctx.getString(R.string.latitude);
             longitude = moods.isEmpty() ? "" : ctx.getString(R.string.longitude);
@@ -167,8 +177,18 @@ final class ClockScene {
                 // As the image, not the background: a background is stretched to the view, so a picture of
                 // another shape than the screen would be distorted. centerCrop scales and crops it like Home.
                 ambient.setBackground(null);
-                ambient.setImageDrawable(new LayerDrawable(new Drawable[]{
-                        new BitmapDrawable(res, bmp), new ColorDrawable(shade)}));
+                LayerDrawable picture = new LayerDrawable(new Drawable[]{
+                        new BitmapDrawable(res, bmp), new ColorDrawable(shade)});
+                if (ambient.getDrawable() == null) {
+                    ambient.setImageDrawable(picture);
+                    return;
+                }
+                // The next film melts in: out, swap and back in. The old picture is released with its drawable.
+                ambient.animate().cancel();
+                ambient.animate().alpha(0f).setDuration(500).withEndAction(() -> {
+                    ambient.setImageDrawable(picture);
+                    ambient.animate().alpha(1f).setDuration(900).start();
+                }).start();
             });
         }, "clock-wallpaper").start();
     }
@@ -206,8 +226,11 @@ final class ClockScene {
         shownMs = 0;
         // The same pick as Home's, so a shuffled collection stays shuffled and wallpaper_moods still
         // decides what may show at this hour.
-        File next = WallpaperRotation.pick(playable(), wallpaperFile.getName(), order, random);
-        if (next.equals(wallpaperFile)) return;   // a mood group of one
+        List<File> playable = playable();
+        File next = WallpaperRotation.ORDER_SEQUENTIAL.equals(order)
+                ? WallpaperRotation.next(playable, wallpaperFile.getName())
+                : WallpaperRotation.pickFresh(playable, shown, wallpaperFile.getName(), random);
+        if (next == null || next.equals(wallpaperFile)) return;   // a mood group of one
         wallpaperFile = next;
         wallpaperShown = false;
         loadWallpaper();

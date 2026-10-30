@@ -162,4 +162,7 @@
     <string name="tmdb_nokey">no key found: put it in tmdb_key.txt</string>
     <string name="tmdb_failed">the last try failed (%1$s)</string>
     <string name="tmdb_waiting">waiting for the first download</string>
+    <string name="memory_button">Free memory</string>
+    <string name="memory_working">Closing apps in the background…</string>
+    <string name="memory_freed">Memory free: %1$d MB (+%2$d MB)</string>
 </resources>

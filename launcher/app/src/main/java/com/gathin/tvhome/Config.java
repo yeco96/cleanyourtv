@@ -95,6 +95,8 @@ final class Config {
     final String tmdbLanguage;
     /** Seconds each TMDb backdrop stays up (theme tmdb_rotation_seconds, 10 to 3600); only with tmdb_backdrops. */
     final int tmdbRotationSeconds;
+    /** A round button in the top bar that closes the apps left running in the background (config.xml / theme memory_button). */
+    final boolean memoryButton;
     /** The highest US film rating the TMDb backdrops may have (theme tmdb_max_certification): G, PG, PG-13, R or NC-17. */
     final String tmdbMaxCertification;
     final int rowsBelowDock;
@@ -291,8 +293,9 @@ final class Config {
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
                    Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
-                   int openOnStartNetworkWait, boolean iconOnlyVpn, boolean continueRow, boolean tmdbBackdrops, String tmdbLanguage, int tmdbRotationSeconds, String tmdbMaxCertification) {
+                   int openOnStartNetworkWait, boolean iconOnlyVpn, boolean continueRow, boolean tmdbBackdrops, String tmdbLanguage, int tmdbRotationSeconds, String tmdbMaxCertification, boolean memoryButton) {
         this.continueRow = continueRow;
+        this.memoryButton = memoryButton;
         this.tmdbMaxCertification = tmdbMaxCertification;
         this.tmdbRotationSeconds = tmdbRotationSeconds;
         this.tmdbBackdrops = tmdbBackdrops;
@@ -455,6 +458,7 @@ final class Config {
         boolean tmdbBackdrops = res.getBoolean(R.bool.tmdb_backdrops);
         String tmdbLanguage = "";
         int tmdbRotationSeconds = 25;
+        boolean memoryButton = res.getBoolean(R.bool.memory_button);
         String tmdbMaxCertification = "PG-13";
         boolean advancedEffects = res.getBoolean(R.bool.advanced_effects);
         boolean shamsi = res.getBoolean(R.bool.shamsi_date);
@@ -570,6 +574,7 @@ final class Config {
             tmdbLanguage = string(json, "tmdb_language", tmdbLanguage).trim();
             tmdbRotationSeconds = integer(json, "tmdb_rotation_seconds", tmdbRotationSeconds, 10, 3600);
             tmdbMaxCertification = string(json, "tmdb_max_certification", tmdbMaxCertification).trim();
+            memoryButton = bool(json, "memory_button", memoryButton);
             advancedEffects = bool(json, "advanced_effects", advancedEffects);
             shamsi = bool(json, "shamsi_date", shamsi);
             lunar = bool(json, "lunar_date", lunar);
@@ -720,7 +725,7 @@ final class Config {
                 consumeVolumeKeys, powerOnHome, homeLongPressHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly,
-                Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn, continueRow, tmdbBackdrops, tmdbLanguage, tmdbRotationSeconds, tmdbMaxCertification);
+                Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn, continueRow, tmdbBackdrops, tmdbLanguage, tmdbRotationSeconds, tmdbMaxCertification, memoryButton);
     }
 
     /**

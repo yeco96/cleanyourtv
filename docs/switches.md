@@ -66,3 +66,4 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `tmdb_language` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_language es-MX on a TV: the title and overview in Spanish"> |
 | `tmdb_rotation_seconds` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_rotation_seconds on a TV"> |
 | `tmdb_max_certification` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_max_certification on a TV"> |
+| `memory_button` | <img src="switches/memory_button.jpg" width="320" alt="memory_button on a TV: the chip icon between the Wi-Fi and Settings buttons"> |

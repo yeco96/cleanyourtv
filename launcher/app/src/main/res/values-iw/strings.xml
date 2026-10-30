@@ -156,4 +156,7 @@
     <string name="tmdb_nokey">לא נמצא מפתח: הניחו אותו ב-tmdb_key.txt</string>
     <string name="tmdb_failed">הניסיון האחרון נכשל (%1$s)</string>
     <string name="tmdb_waiting">ממתין להורדה הראשונה</string>
+    <string name="memory_button">שחרור זיכרון</string>
+    <string name="memory_working">סוגר אפליקציות ברקע…</string>
+    <string name="memory_freed">זיכרון פנוי: %1$d MB (+%2$d MB)</string>
 </resources>

@@ -13,6 +13,9 @@
          published (GET only, 6 MB at most); nothing else goes online and nothing is sent. READ_TV_LISTINGS (a runtime
          permission, "TV listings") and READ_EPG_DATA: read what the apps publish to the programme guide (AppContent). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The memory button (memory_button): close the apps left running in the background, as Android does when
+         memory runs short. A normal permission; it cannot touch what is on screen or a foreground service. -->
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at

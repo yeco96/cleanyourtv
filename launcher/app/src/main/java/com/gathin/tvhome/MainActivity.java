@@ -816,6 +816,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
+        btnMemory = findViewById(R.id.btnMemory);
+        btnMemory.setVisibility(cfg.memoryButton ? View.VISIBLE : View.GONE);
+        btnMemory.setOnClickListener(v -> freeMemory());
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
@@ -886,9 +889,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        btnMemory.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnMemory, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -3084,6 +3088,27 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private ColorStateList wifiNoInternetTint, wifiOfflineTint;
     /** The app library button in the top bar (library_button). */
     private View btnLibraryTop;
+    /** The memory button in the top bar (memory_button). */
+    private View btnMemory;
+    private boolean freeingMemory;
+
+    /** memory_button: closes the apps left in the background and says how much memory is free now. */
+    private void freeMemory() {
+        if (freeingMemory) return;
+        freeingMemory = true;
+        Toast.makeText(this, R.string.memory_working, Toast.LENGTH_SHORT).show();
+        Context app = getApplicationContext();
+        new Thread(() -> {
+            MemoryCleaner.Result result = MemoryCleaner.run(app);
+            runOnUiThread(() -> {
+                freeingMemory = false;
+                if (isDestroyed()) return;
+                int gained = Math.max(0, result.freeAfterMb - result.freeBeforeMb);
+                Toast.makeText(this, getString(R.string.memory_freed, result.freeAfterMb, gained),
+                        Toast.LENGTH_LONG).show();
+            });
+        }, "memory-cleaner").start();
+    }
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */
     private boolean libraryFromTopBar;
     /** The open library came from the VPN pill (vpn_pill, no VPN app): closing it returns there while the pill still shows. */

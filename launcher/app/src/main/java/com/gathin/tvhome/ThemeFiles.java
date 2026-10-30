@@ -17,8 +17,10 @@ final class ThemeFiles {
         if (segments == null) return null;
         if (segments.size() == 1) {
             String name = segments.get(0);
+            // tmdb_key.txt is not a theme file: it is the TMDb key (TmdbBackdrops), and this provider is the way to
+            // put it on firmware that keeps the shell out of Android/data. Like the rest, only the adb shell can write it.
             return Config.FILE_NAME.equals(name) || "wallpaper.jpg".equals(name) || "theme_revision".equals(name)
-                    ? name : null;
+                    || TmdbBackdrops.KEY_FILE.equals(name) ? name : null;
         }
         if (segments.size() == 2 && WALLPAPERS.equals(segments.get(0))
                 && (collectionImage(segments.get(1)) || WallpaperCaptions.FILE_NAME.equals(segments.get(1)))) {

@@ -92,7 +92,9 @@ final class AppContent {
             StringBuilder report = new StringBuilder();
             Map<Long, String> channels = readChannels(report);
             readWatchNext(fresh, cw, report);
-            readPreview(fresh, recs, channels, report);
+            // The apps' preview channels (their recommendations) are not read: Home shows only "Continue watching",
+            // and a TV with Pluto TV and a tuner publishes hundreds of rows there (866 on one), read at every return
+            // to Home for nothing. readPreview stays for a recommendations row.
             // Most recent first, as the stock row orders it.
             Collections.sort(cw, (a, b) -> Long.compare(b.lastEngaged, a.lastEngaged));
             writeReport(cw, report);

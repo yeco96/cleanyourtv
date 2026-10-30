@@ -17,6 +17,13 @@ public class ThemeFilesTest {
         assertEquals("theme_revision", ThemeFiles.path(Collections.singletonList("theme_revision")));
     }
 
+    @Test public void theTmdbKeyFileIsAllowedButNoOtherName() {
+        assertEquals("tmdb_key.txt", ThemeFiles.path(Collections.singletonList("tmdb_key.txt")));
+        assertNull(ThemeFiles.path(Collections.singletonList("tmdb_key.txt.bak")));
+        assertNull(ThemeFiles.path(Arrays.asList("wallpapers", "tmdb_key.txt")));
+        assertNull(ThemeFiles.path(Collections.singletonList("../tmdb_key.txt")));
+    }
+
     @Test public void collectionImagesAreAllowed() {
         assertEquals("wallpapers/dusk.jpg", ThemeFiles.path(Arrays.asList("wallpapers", "dusk.jpg")));
         assertEquals("wallpapers/Night_2.WEBP", ThemeFiles.path(Arrays.asList("wallpapers", "Night_2.WEBP")));

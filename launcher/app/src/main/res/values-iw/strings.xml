@@ -149,4 +149,6 @@
     <string name="race_countdown_days">%1$d ימ׳ %2$d שע׳</string>
     <string name="last_opened">פתיחה אחרונה: %1$s</string>
     <string name="game_live">בשידור חי עכשיו</string>
+    <string name="continue_watching">המשך צפייה</string>
+    <string name="continue_state">המשך צפייה: %1$s</string>
 </resources>

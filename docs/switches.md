@@ -61,3 +61,8 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `inputs_connected_only` | <img src="switches/inputs_connected_only.jpg" width="320" alt="inputs_connected_only on a TV"> |
 | `icon_tiles` | <img src="switches/icon_tiles.jpg" width="320" alt="icon_tiles: an app drawn from its icon in the grid on a TV"> |
 | `game_day` | <img src="switches/game_day.jpg" width="320" alt="game_day: Minnesota Vikings at Detroit Lions, Kickoff in 5d 13h, with four dots, under the clock on a TV"> |
+| `continue_row` | <img src="switches/continue_row.jpg" width="320" alt="continue_row on a TV"> |
+| `tmdb_backdrops` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_backdrops on a TV"> |
+| `tmdb_language` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_language es-MX on a TV: the title and overview in Spanish"> |
+| `tmdb_rotation_seconds` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_rotation_seconds on a TV"> |
+| `tmdb_max_certification` | <img src="switches/tmdb_backdrops.jpg" width="320" alt="tmdb_max_certification on a TV"> |

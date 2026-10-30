@@ -3764,6 +3764,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             });
         }
         addSettingsMenuRow(rows, popup, R.string.usage_menu, () -> startActivity(new Intent(this, UsageActivity.class)));
+        if (wallpaperPlayer.usesMovies()) {
+            addSettingsMenuRow(rows, popup, R.string.tmdb_refresh, () -> Toast.makeText(this,
+                    wallpaperPlayer.refreshMovies() ? R.string.tmdb_refreshing : R.string.tmdb_busy, Toast.LENGTH_LONG).show());
+        }
         if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
         if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);

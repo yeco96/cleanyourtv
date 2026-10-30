@@ -143,20 +143,12 @@
             android:excludeFromRecents="true"
             android:screenOrientation="landscape" />
         <!-- The kids' screen: Home while kids mode has allowed apps; the guard sends other apps back to it. -->
-        <!-- Kids mode as an app of the TV, so it can be put in the dock (AppAdapter lets this one entry of the launcher through). -->
+        <!-- Opened by the Kids Mode module card: turns kids mode on, or asks for the PIN to manage it. -->
         <activity
             android:name=".KidModeLaunchActivity"
             android:exported="true"
             android:excludeFromRecents="true"
-            android:icon="@drawable/ic_kid_entry"
-            android:banner="@drawable/ic_kid_entry"
-            android:label="@string/kid_btn_off"
-            android:theme="@android:style/Theme.NoDisplay">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@android:style/Theme.NoDisplay" />
         <activity
             android:name=".KidsHomeActivity"
             android:exported="false"

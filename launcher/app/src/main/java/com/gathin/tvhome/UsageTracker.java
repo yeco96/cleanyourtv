@@ -83,7 +83,7 @@ final class UsageTracker {
             state.cls = prefs.getString("open_cls", null);
             state.openedAt = prefs.getLong("open_at", 0);
             state.countedUntil = prefs.getLong("open_until", 0);
-            UsageStore store = new UsageStore(context);
+            UsageStore store = UsageStore.of(context);
             Set<String> skip = ignored(context);
             store.removeApps(skip);   // what an older read counted before the app was known not to be use
             List<UsageSessions.Span> spans = UsageSessions.fold(state, events, now, skip, MAX_SPAN_MS);

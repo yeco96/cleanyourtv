@@ -102,7 +102,7 @@ public final class KidsHomeActivity extends Activity {
         // What the kids used today, app by app, so they can see how much they have had.
         Map<String, Long> today = new HashMap<>();
         long all = 0;
-        List<UsageReport.Row> rows = new UsageStore(this).since(UsageGuard.today());
+        List<UsageReport.Row> rows = UsageStore.of(this).since(UsageGuard.today());
         for (UsageReport.AppTotal app : UsageReport.byApp(rows, UsageReport.CHILD)) {
             today.put(app.pkg, app.seconds);
             all += app.seconds;

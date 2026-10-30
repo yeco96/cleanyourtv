@@ -11,7 +11,14 @@ import java.util.List;
 
 /** The seconds each app was in front, per day and profile, kept on the TV (usage.db). Nothing leaves the TV. */
 final class UsageStore extends SQLiteOpenHelper {
-    UsageStore(Context context) {
+    private static UsageStore instance;
+
+    static synchronized UsageStore of(Context context) {
+        if (instance == null) instance = new UsageStore(context);
+        return instance;
+    }
+
+    private UsageStore(Context context) {
         super(context.getApplicationContext(), "usage.db", null, 1);
     }
 

@@ -86,7 +86,7 @@ final class UsageGuard {
 
     /** Seconds the kids have used the TV today (the day runs from 05:00 to 05:00). */
     static long usedSeconds(Context c) {
-        return new UsageStore(c).daySeconds(today(), UsageReport.CHILD);
+        return UsageStore.of(c).daySeconds(today(), UsageReport.CHILD);
     }
 
     /** The hour notice (1 or 2) already given today; 0 when none. */

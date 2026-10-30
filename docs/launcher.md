@@ -42,6 +42,7 @@ Click **Settings** for the TV's own settings. Hold OK on it for its menu:
   TCL/FFALCON and Fire OS are in `settings_fallback_components` - because that app holds pages
   Android's has no row for, such as Xiaomi's Account & Security with the ADB switch.
 - **TV usage**: minutes per app for today, 7 days and 30 days, counting only the app in front (see `yecotv/README.md`).
+- **Refresh the movies**, with `tmdb_backdrops`: fetches new movie pictures now instead of at the next daily check.
 - **Module cards**, with `module_cards`.
 - **Edit dock**, with `dock_row`.
 - **Reorder apps**.

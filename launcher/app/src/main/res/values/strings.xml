@@ -202,4 +202,7 @@
     <string name="kid_today_total">Today: %1$s</string>
     <string name="kid_service_name">Kids mode guard</string>
     <string name="kid_service_description">Counts the time the children use and sends any app that is not on their list back to their own screen. It only sees which app is in front.</string>
+    <string name="tmdb_refresh">Refresh the movies</string>
+    <string name="tmdb_refreshing">Updating the movies. The new pictures appear in a minute.</string>
+    <string name="tmdb_busy">The movies are already updating.</string>
 </resources>

@@ -121,7 +121,7 @@ public final class UsageActivity extends Activity {
         LocalDate today = LocalDate.parse(UsageDays.dayOf(System.currentTimeMillis(), zone, UsageTracker.DAY_SHIFT_HOURS));
         int days = TAB_DAYS[tab];
         LocalDate from = today.minusDays(days - 1);
-        List<UsageReport.Row> all = new UsageStore(this).since(from.minusDays(days).toString());   // one more period back, to compare
+        List<UsageReport.Row> all = UsageStore.of(this).since(from.minusDays(days).toString());   // one more period back, to compare
         List<UsageReport.Row> now = new ArrayList<>();
         for (UsageReport.Row r : all) if (r.day.compareTo(from.toString()) >= 0) now.add(r);
         long total = UsageReport.total(now, null);

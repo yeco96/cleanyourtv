@@ -193,4 +193,7 @@
     <string name="kid_today_total">Hoy llevas: %1$s</string>
     <string name="kid_service_name">Guardia del modo niños</string>
     <string name="kid_service_description">Cuenta el tiempo de los niños y devuelve a la pantalla de niños cualquier app que no esté en su lista. Solo ve qué app está al frente.</string>
+    <string name="tmdb_refresh">Actualizar las películas</string>
+    <string name="tmdb_refreshing">Actualizando las películas. Las imágenes nuevas aparecen en un minuto.</string>
+    <string name="tmdb_busy">Las películas ya se están actualizando.</string>
 </resources>

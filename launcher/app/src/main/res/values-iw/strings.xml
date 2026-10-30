@@ -196,4 +196,7 @@
     <string name="kid_today_total">היום: %1$s</string>
     <string name="kid_service_name">שומר מצב ילדים</string>
     <string name="kid_service_description">סופר את זמן הילדים ומחזיר למסך הילדים כל אפליקציה שאינה ברשימה שלהם. רואה רק איזו אפליקציה בחזית.</string>
+    <string name="tmdb_refresh">רענון הסרטים</string>
+    <string name="tmdb_refreshing">הסרטים מתעדכנים. התמונות החדשות יופיעו בעוד דקה.</string>
+    <string name="tmdb_busy">הסרטים כבר מתעדכנים.</string>
 </resources>

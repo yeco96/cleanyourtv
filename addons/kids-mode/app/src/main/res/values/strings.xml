@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Kids Mode</string>
+    <string name="needs_launcher">Kids mode needs the CleanYourTV launcher (the yecoTV one) installed.</string>
+</resources>

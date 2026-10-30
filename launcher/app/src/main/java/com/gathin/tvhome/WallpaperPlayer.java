@@ -243,6 +243,16 @@ final class WallpaperPlayer {
         }
     }
 
+    /** True while the pictures are the TMDb movies. */
+    boolean usesMovies() {
+        return tmdb;
+    }
+
+    /** Fetches new movie pictures now instead of at the next daily check; false when a fetch is already running. */
+    boolean refreshMovies() {
+        return tmdb && TmdbBackdrops.refreshNow(root.getContext(), this, config);
+    }
+
     /** The folder holds new pictures (the TMDb refresh swapped them in): play from them, with their movie details. */
     void reload(File wallpapers) {
         List<File> fresh = WallpaperRotation.images(wallpapers);

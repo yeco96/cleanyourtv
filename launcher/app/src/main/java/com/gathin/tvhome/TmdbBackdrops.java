@@ -93,6 +93,14 @@ final class TmdbBackdrops {
         EXECUTOR.execute(() -> fetch(app, base, key, language, certification, player));
     }
 
+    /** The menu's refresh: forgets when the last one was and starts one now. False when one is already running. */
+    static boolean refreshNow(Context context, WallpaperPlayer player, Config config) {
+        if (FETCHING.get()) return false;
+        context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong(LAST_UPDATE, 0).apply();
+        checkAndUpdate(context, player, config);
+        return true;
+    }
+
     /** The highest US rating allowed: one of G, PG, PG-13, R, NC-17; PG-13 when unset or unknown, none for "any". */
     static String certification(String configured) {
         if (configured == null) return DEFAULT_CERTIFICATION;

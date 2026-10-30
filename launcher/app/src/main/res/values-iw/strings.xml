@@ -215,4 +215,5 @@
     <string name="kid_extra">הוספת %1$d דקות להיום</string>
     <string name="kid_today_of_extra">היום: %1$s מתוך %2$s (+%3$s נוספות)</string>
     <string name="kid_remove_extra">הסרת הזמן הנוסף של היום (%1$d דקות)</string>
+    <string name="kid_hello">שלום!</string>
 </resources>

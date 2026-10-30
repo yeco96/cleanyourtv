@@ -6,9 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Outline;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
+import android.view.ViewOutlineProvider;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -21,13 +27,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * What the kids see while kids mode has a list of allowed apps: a big tile (the app's banner) for each of those apps with the
- * time spent in it today, the day's total, and a Grown-ups tile that asks for the PIN. Back does nothing; the guard
- * (UsageGuardService) sends any other app back here.
+ * What the kids see while kids mode has a list of allowed apps: a night sky with a greeting, a bar that shows how much of
+ * the day's time is used, and a glass dock (like the grown-ups' one) with a tile for each allowed app and the time spent in
+ * it today, and a Grown-ups tile that asks for the PIN. Back does nothing; the guard (UsageGuardService) sends any other
+ * app back here. With the time used up, only the Grown-ups tile is left.
  */
 public final class KidsHomeActivity extends Activity {
+    private static final int GOLD = 0xFFF5B945;
+
     private LinearLayout tiles;
     private TextView total;
+    private LinearLayout barTrack;
+    private View barFill;
     private float density;
 
     @Override
@@ -39,31 +50,47 @@ public final class KidsHomeActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         density = getResources().getDisplayMetrics().density;
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setGravity(Gravity.CENTER);
-        page.setBackgroundColor(0xFF101419);
-        TextView title = new TextView(this);
-        title.setText(R.string.kid_btn_off);
-        title.setTextSize(40);
-        title.setTextColor(0xFFF5B945);
-        title.setGravity(Gravity.CENTER);
-        page.addView(title);
+        FrameLayout root = new FrameLayout(this);
+        root.addView(new KidsBackground(this), new FrameLayout.LayoutParams(-1, -1));
+
+        LinearLayout column = new LinearLayout(this);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setPadding(dp(64), dp(48), dp(64), dp(44));
+        TextView hello = new TextView(this);
+        hello.setText(R.string.kid_hello);
+        hello.setTextSize(48);
+        hello.setTypeface(Typeface.DEFAULT_BOLD);
+        hello.setTextColor(Color.WHITE);
+        hello.setShadowLayer(8 * density, 0, 2 * density, 0x66000000);
+        column.addView(hello);
         total = new TextView(this);
-        total.setTextSize(22);
-        total.setTextColor(0xCCFFFFFF);
-        total.setGravity(Gravity.CENTER);
-        page.addView(total);
+        total.setTextSize(24);
+        total.setTextColor(0xFFFFE9A8);
+        column.addView(total);
+        barTrack = new LinearLayout(this);
+        barTrack.setBackground(rounded(0x33FFFFFF, 0, 0, 10));
+        barFill = new View(this);
+        barTrack.addView(barFill, new LinearLayout.LayoutParams(0, -1));
+        LinearLayout.LayoutParams trackAt = new LinearLayout.LayoutParams(dp(520), dp(18));
+        trackAt.topMargin = dp(14);
+        column.addView(barTrack, trackAt);
+        column.addView(new View(this), new LinearLayout.LayoutParams(0, 0, 1f));   // pushes the dock to the bottom
+
         HorizontalScrollView scroll = new HorizontalScrollView(this);
         scroll.setHorizontalScrollBarEnabled(false);
         scroll.setFillViewport(true);
+        scroll.setClipToPadding(false);
         tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
         tiles.setGravity(Gravity.CENTER);
-        tiles.setPadding(dp(60), dp(30), dp(60), 0);
+        tiles.setPadding(dp(20), dp(30), dp(20), dp(26));
         scroll.addView(tiles);
-        page.addView(scroll, new LinearLayout.LayoutParams(-1, -2));
-        setContentView(page);
+        FrameLayout dock = new FrameLayout(this);
+        dock.setBackground(rounded(0x33FFFFFF, 0x66FFFFFF, 2, 30));
+        dock.addView(scroll);
+        column.addView(dock, new LinearLayout.LayoutParams(-1, -2));
+        root.addView(column, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(root);
     }
 
     @Override
@@ -89,7 +116,15 @@ public final class KidsHomeActivity extends Activity {
         return Math.round(value * density);
     }
 
-    /** "35 min" or "1 h 5 min", the same words as the usage screen. */
+    private GradientDrawable rounded(int fill, int stroke, int strokeDp, int radiusDp) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(fill);
+        d.setCornerRadius(radiusDp * density);
+        if (strokeDp > 0) d.setStroke(dp(strokeDp), stroke);
+        return d;
+    }
+
+    /** "35 min" or "1 h 5 min", the same words as the usage screen; whole hours read "1 h". */
     private String duration(long seconds) {
         long minutes = (seconds + 30) / 60;
         if (minutes < 60) return getString(R.string.usage_minutes, minutes);
@@ -115,28 +150,46 @@ public final class KidsHomeActivity extends Activity {
                 ? getString(R.string.kid_today_total, duration(all))
                 : extra > 0 ? getString(R.string.kid_today_of_extra, duration(all), duration(limit * 60L), duration(extra * 60L))
                 : getString(R.string.kid_today_of, duration(all), duration(limit * 60L)));
+        showBar(all, limit, extra);
         Set<String> allowed = UsageGuard.allowed(this);
         List<String> shown = new ArrayList<>();
         for (String pkg : allowed) {
             if (!up && launchIntent(pm, pkg) != null) shown.add(pkg);   // time is up: no app tiles, only Grown-ups
         }
         shown.sort((a, b) -> label(pm, a).compareToIgnoreCase(label(pm, b)));
-        LinearLayout first = null;
+        View first = null;
         for (String pkg : shown) {
             Intent launch = launchIntent(pm, pkg);
             Drawable banner = banner(pm, pkg, launch);
             Long seconds = today.get(pkg);
-            LinearLayout tile = tile(label(pm, pkg), banner != null ? banner : icon(pm, pkg), banner != null,
+            View tile = tile(label(pm, pkg), banner != null ? banner : icon(pm, pkg), banner != null,
                     seconds == null ? "" : duration(seconds));
             tile.setOnClickListener(v -> startActivity(launch));
             tiles.addView(tile);
             if (first == null) first = tile;
         }
-        LinearLayout grownUps = tile(getString(R.string.kid_adults), null, false, "");
+        View grownUps = tile(getString(R.string.kid_adults), null, false, "");
         grownUps.setOnClickListener(v -> startActivity(new Intent(this, KidModeActivity.class)
                 .putExtra(KidModeActivity.EXTRA_MODE, KidModeActivity.MODE_MANAGE)));
         tiles.addView(grownUps);
         (first != null ? first : grownUps).requestFocus();
+    }
+
+    /** The bar fills as the time is used: green, then yellow, then red; hidden when there is no limit. */
+    private void showBar(long usedSeconds, int limit, int extra) {
+        if (limit <= 0) {
+            barTrack.setVisibility(View.GONE);
+            return;
+        }
+        barTrack.setVisibility(View.VISIBLE);
+        float used = Math.min(1f, usedSeconds / ((limit + extra) * 60f));
+        int color = used < 0.7f ? 0xFF6BD66B : used < 0.9f ? GOLD : 0xFFFF6B5E;
+        barFill.setBackground(rounded(color, 0, 0, 10));
+        LinearLayout.LayoutParams at = (LinearLayout.LayoutParams) barFill.getLayoutParams();
+        barTrack.post(() -> {
+            at.width = Math.max(dp(18), Math.round(barTrack.getWidth() * used));
+            barFill.setLayoutParams(at);
+        });
     }
 
     private Intent launchIntent(PackageManager pm, String pkg) {
@@ -172,22 +225,36 @@ public final class KidsHomeActivity extends Activity {
     }
 
     /**
-     * A big focusable tile: the app's banner (or its icon) over its name and the time spent in it today. The Grown-ups
-     * tile has no picture, only a larger word.
+     * A focusable tile of the dock: the app's banner with rounded corners (or its icon), its name and the time spent in it
+     * today. The focused one gets a gold edge. The Grown-ups tile has no picture, only a larger word.
      */
-    private LinearLayout tile(String name, Drawable picture, boolean wide, String time) {
+    private View tile(String name, Drawable picture, boolean wide, String time) {
         LinearLayout tile = new LinearLayout(this);
         tile.setOrientation(LinearLayout.VERTICAL);
         tile.setGravity(Gravity.CENTER);
         tile.setFocusable(true);
         tile.setClickable(true);
-        tile.setBackgroundResource(R.drawable.settings_choice_bg);
-        tile.setPadding(dp(14), dp(14), dp(14), dp(14));
+        tile.setPadding(dp(10), dp(10), dp(10), dp(10));
+        GradientDrawable idle = rounded(0x22FFFFFF, 0x00000000, 3, 18);
+        GradientDrawable focused = rounded(0x55FFFFFF, GOLD, 4, 18);
+        tile.setBackground(idle);
+        tile.setOnFocusChangeListener((v, has) -> {
+            v.setBackground(has ? focused : idle);
+        });
         if (picture != null) {
             ImageView image = new ImageView(this);
             image.setImageDrawable(picture);
-            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            tile.addView(image, new LinearLayout.LayoutParams(wide ? dp(192) : dp(108), wide ? dp(108) : dp(108)));
+            image.setScaleType(wide ? ImageView.ScaleType.CENTER_CROP : ImageView.ScaleType.FIT_CENTER);
+            if (wide) {
+                image.setOutlineProvider(new ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(View view, Outline outline) {
+                        outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 12 * density);
+                    }
+                });
+                image.setClipToOutline(true);
+            }
+            tile.addView(image, new LinearLayout.LayoutParams(wide ? dp(176) : dp(99), dp(99)));
         }
         TextView label = new TextView(this);
         label.setText(name);
@@ -202,12 +269,12 @@ public final class KidsHomeActivity extends Activity {
             TextView used = new TextView(this);
             used.setText(time);
             used.setTextSize(18);
-            used.setTextColor(0xFFF5B945);
+            used.setTextColor(GOLD);
             used.setGravity(Gravity.CENTER);
             tile.addView(used);
         }
-        LinearLayout.LayoutParams at = new LinearLayout.LayoutParams(dp(224), dp(206));
-        at.setMarginEnd(dp(18));
+        LinearLayout.LayoutParams at = new LinearLayout.LayoutParams(dp(200), dp(190));
+        at.setMarginEnd(dp(16));
         tile.setLayoutParams(at);
         return tile;
     }

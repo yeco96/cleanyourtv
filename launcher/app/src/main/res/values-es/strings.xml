@@ -212,4 +212,5 @@
     <string name="kid_extra">Dar %1$d minutos más hoy</string>
     <string name="kid_today_of_extra">Hoy: %1$s de %2$s (+%3$s extra)</string>
     <string name="kid_remove_extra">Quitar el tiempo extra de hoy (%1$d min)</string>
+    <string name="kid_hello">¡Hola!</string>
 </resources>

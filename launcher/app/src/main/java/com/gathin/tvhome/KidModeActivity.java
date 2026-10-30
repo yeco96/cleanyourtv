@@ -8,7 +8,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,7 +57,7 @@ public final class KidModeActivity extends Activity {
         page.setOrientation(LinearLayout.VERTICAL);
         page.setGravity(Gravity.CENTER_HORIZONTAL);
         page.setBackgroundColor(0xFF101419);
-        page.setPadding(dp(72), dp(60), dp(72), dp(38));
+        page.setPadding(dp(72), dp(36), dp(72), dp(24));
         title = text("", 34, Color.WHITE);
         title.setGravity(Gravity.CENTER);
         page.addView(title);
@@ -71,9 +73,13 @@ public final class KidModeActivity extends Activity {
         page.addView(pinRow, pinAt);
         options = new LinearLayout(this);
         options.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams optionsAt = new LinearLayout.LayoutParams(dp(520), -2);
-        optionsAt.topMargin = dp(20);
-        page.addView(options, optionsAt);
+        // The list is longer than the screen: it scrolls, and the focused row stays in view.
+        ScrollView scroller = new ScrollView(this);
+        scroller.setVerticalScrollBarEnabled(false);
+        scroller.addView(options, new FrameLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams optionsAt = new LinearLayout.LayoutParams(dp(520), 0, 1f);
+        optionsAt.topMargin = dp(16);
+        page.addView(scroller, optionsAt);
         setContentView(page);
         if (mode == MODE_ACTIVATE && !UsageGuard.hasPin(this)) {
             show(Stage.SET_PIN);

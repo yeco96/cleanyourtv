@@ -131,7 +131,8 @@ public final class UsageActivity extends Activity {
             return;
         }
         body.addView(text(duration(total), 44, Color.WHITE));
-        String sub = getString(R.string.usage_child_part, duration(UsageReport.total(now, UsageReport.CHILD)));
+        String sub = getString(R.string.usage_split, duration(UsageReport.total(now, UsageReport.ADULT)),
+                duration(UsageReport.total(now, UsageReport.CHILD)));
         if (days > 1 && before > 0) {
             int change = UsageReport.changePercent(total, before);
             sub += "   ·   " + getString(R.string.usage_vs_before, (change > 0 ? "+" : "") + change + "%");

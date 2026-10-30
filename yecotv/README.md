@@ -105,7 +105,7 @@ Viven en `files/tmdb/`, no en `wallpapers/`. Aplicar un tema no las borra. Una v
 - **Git Bash convierte las rutas** que empiezan por `/` en rutas de Windows (`/data/local/tmp/x` pasa a `C:/Program Files/Git/...`). Con `MSYS_NO_PATHCONV=1` no lo hace.
 - **Una TV con mucha guía publicada** (Pluto TV, un sintonizador) puede tener cientos de filas: la MOOQ2 tenía 762 de "para ver después". El launcher lee solo las de "seguir viendo" y muestra 20.
 - **PowerShell 5.1**: `$(...)` dentro de un comando para la TV se evalúa en el PC; usa Bash o comillas simples. Un aviso de Java en stderr aborta los scripts con `ErrorActionPreference Stop`.
-- **El CI de este fork tiene el límite de la APK en 600 KB** (el original, 576 KB). La APK pesa unos 596 KB.
+- **El CI de este fork tiene el límite de la APK en 640 KB** (el original, 576 KB). La APK pesa unos 600 KB.
 - La suite de Python en Windows da fallos que ya existen en el original (permisos, `git` ausente). Se compara contra ellos, no contra cero.
 
 ## Qué falta por comprobar
@@ -113,3 +113,9 @@ Viven en `files/tmdb/`, no en `wallpapers/`. Aplicar un tema no las borra. Una v
 - La **línea de estado de TMDb** en los ajustes del launcher (esa pantalla no se puede abrir por ADB).
 - La secuencia completa con el mando por **Seguir viendo**: Abajo, Izquierda y Derecha, Arriba y OK sobre una tarjeta.
 - Las funciones de red no se han revisado contra una auditoría externa: el launcher habla solo con `api.themoviedb.org`, `image.tmdb.org` y las direcciones de carátulas que cada app publica.
+
+## Uso de la TV y Modo niños
+
+- **Uso de la TV** (menú de mantener OK en Ajustes): minutos por app, hoy, 7 y 30 días. Solo cuenta la app al frente, no el Home ni el protector de pantalla. Necesita una vez por TV: `appops set com.gathin.tvhome GET_USAGE_STATS allow`.
+- **Modo niños** (botón de la barra superior): cuenta el tiempo aparte y avisa a la 1 h y a las 2 h. No bloquea nada. Se sale con el PIN de 4 dígitos (arriba/abajo cambian el número, OK avanza), y desde ahí se cambia el PIN. Si se olvida, el PIN genérico de reinicio (`kid_master_pin` en `config.xml`) deja elegir uno nuevo. Para que los avisos funcionen el launcher enciende su propio servicio, y para eso necesita una vez por TV: `pm grant com.gathin.tvhome android.permission.WRITE_SECURE_SETTINGS`.
+- El instalador reescribe la lista de servicios de accesibilidad: el launcher vuelve a encender el suyo al abrir Home con el modo activo.

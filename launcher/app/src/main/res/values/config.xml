@@ -523,4 +523,7 @@
     <!-- Tiles drawn from the app's icon and name instead of its banner (for banners that crop badly). -->
     <string-array name="icon_tiles" translatable="false">
     </string-array>
+    <!-- Kids mode (usage_limit): at the PIN prompt this code lets a grown-up who forgot the PIN choose a new one. It is in the
+         source, so change it here (or in a theme) for any TV a child might have read it on. -->
+    <string name="kid_master_pin" translatable="false">2580</string>
 </resources>

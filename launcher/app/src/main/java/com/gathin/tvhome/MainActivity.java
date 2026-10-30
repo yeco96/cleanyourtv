@@ -412,6 +412,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updatePanel();
+            if (UsageGuard.isActive(MainActivity.this)) {
+                UsageTracker.update(getApplicationContext(), UsageReport.CHILD);
+                UsageGuard.checkNotice(MainActivity.this);
+            }
+            updateKidsPill();
             // The pill follows the network callbacks and each return to Home; only the festive light follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -810,6 +815,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         showInputsPill = cfg.showInputsPill;
         showInputsMenuRow = cfg.showInputsPill;
+        btnKids = findViewById(R.id.btnKids);
+        btnKids.setOnClickListener(v -> startActivity(new Intent(this, KidModeActivity.class).putExtra(KidModeActivity.EXTRA_MODE,
+                UsageGuard.isActive(this) ? KidModeActivity.MODE_MANAGE : KidModeActivity.MODE_ACTIVATE)));
         btnLibraryTop = findViewById(R.id.btnLibraryTop);
         btnLibraryTop.setOnClickListener(v -> {
             onLibraryRequested();
@@ -886,9 +894,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        btnKids.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnKids, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -1030,7 +1039,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         resumed = true;
-        new Thread(() -> UsageTracker.update(getApplicationContext(), UsageGuard.currentProfile(getApplicationContext()))).start();
+        if (UsageGuard.isActive(this)) {
+            UsageGuard.ensureService(this);
+            UsageTracker.update(getApplicationContext(), UsageReport.CHILD);
+            UsageGuard.checkNotice(this);
+            updateKidsPill();
+        } else {
+            updateKidsPill();
+            new Thread(() -> UsageTracker.update(getApplicationContext(), UsageReport.ADULT)).start();
+        }
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -3085,6 +3102,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private ColorStateList wifiNoInternetTint, wifiOfflineTint;
     /** The app library button in the top bar (library_button). */
     private View btnLibraryTop;
+    /** The kids mode pill: its name, or the time the kids have left today while it is on (usage_limit). */
+    private View btnKids;
+
+    private void updateKidsPill() {
+        TextView pill = (TextView) btnKids;
+        if (!UsageGuard.isActive(this)) {
+            pill.setText(R.string.kid_btn_off);
+            return;
+        }
+        pill.setText(getString(R.string.kid_btn_on, (UsageGuard.usedSeconds(this) + 30) / 60));
+    }
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */
     private boolean libraryFromTopBar;
     /** The open library came from the VPN pill (vpn_pill, no VPN app): closing it returns there while the pill still shows. */

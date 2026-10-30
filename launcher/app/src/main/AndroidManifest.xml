@@ -143,6 +143,25 @@
             android:excludeFromRecents="true"
             android:screenOrientation="landscape" />
         <activity
+            android:name=".KidModeActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape" />
+        <!-- Kids mode: watches which window comes to the front while the mode is on. Switched on by the launcher
+             itself (WRITE_SECURE_SETTINGS) when the mode is turned on. -->
+        <service
+            android:name=".UsageGuardService"
+            android:label="@string/kid_service_name"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/usage_guard_service" />
+        </service>
+        <activity
             android:name=".QuickSettingsActivity"
             android:exported="false"
             android:taskAffinity=""

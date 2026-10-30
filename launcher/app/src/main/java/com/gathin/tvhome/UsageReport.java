@@ -13,7 +13,7 @@ import java.util.Map;
  */
 final class UsageReport {
     static final String ADULT = "adulto";
-    static final String CHILD = "hija";
+    static final String CHILD = "limitado";
 
     private UsageReport() { }
 

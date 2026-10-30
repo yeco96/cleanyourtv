@@ -1041,6 +1041,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         resumed = true;
         if (UsageGuard.isActive(this)) {
             UsageGuard.ensureService(this);
+            if (UsageGuard.guarding(this)) {
+                startActivity(new Intent(this, KidsHomeActivity.class));   // Home is the kids' screen while the mode is on
+                return;
+            }
             UsageTracker.update(getApplicationContext(), UsageReport.CHILD);
             UsageGuard.checkNotice(this);
             updateKidsPill();

@@ -196,4 +196,9 @@
     <string name="kid_hour_2">The kids have used the TV for 2 hours today</string>
     <string name="kid_used">Used today: %1$d min</string>
     <string name="usage_day_note">Day starting 5:00 a.m.: %1$s</string>
+    <string name="kid_adults">Grown-ups</string>
+    <string name="kid_pick_apps">Apps the kids can open</string>
+    <string name="kid_pick_title">Apps the kids can open</string>
+    <string name="kid_pick_hint">OK ticks or unticks an app. Back saves.</string>
+    <string name="kid_wait">Too many wrong tries. Wait %1$d s.</string>
 </resources>

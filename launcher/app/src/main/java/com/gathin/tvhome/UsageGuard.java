@@ -40,9 +40,43 @@ final class UsageGuard {
         prefs(c).edit().putString("salt", salt.toString()).putString("hash", UsageLimit.hash(pin, salt.toString())).apply();
     }
 
-    static boolean checkPin(Context c, String pin) {
+    static final int PIN_WRONG = 0, PIN_OK = 1, PIN_MASTER = 2, PIN_WAIT = 3;
+
+    /** Checks a PIN try. After five wrong ones in a row each try waits (30 s doubling to 5 min), the master PIN included. */
+    static int attempt(Context c, String pin, String master) {
         SharedPreferences p = prefs(c);
-        return UsageLimit.matches(pin, p.getString("salt", ""), p.getString("hash", null));
+        if (System.currentTimeMillis() < p.getLong("wait_until", 0)) return PIN_WAIT;
+        int result = pin.equals(master) ? PIN_MASTER
+                : UsageLimit.matches(pin, p.getString("salt", ""), p.getString("hash", null)) ? PIN_OK : PIN_WRONG;
+        if (result != PIN_WRONG) {
+            p.edit().putInt("wrong", 0).putLong("wait_until", 0).apply();
+            return result;
+        }
+        int wrong = p.getInt("wrong", 0) + 1;
+        p.edit().putInt("wrong", wrong).putLong("wait_until", System.currentTimeMillis() + KidsPolicy.waitAfter(wrong)).apply();
+        return PIN_WRONG;
+    }
+
+    static long waitLeftMs(Context c) {
+        return Math.max(0, prefs(c).getLong("wait_until", 0) - System.currentTimeMillis());
+    }
+
+    /** The TV apps the kids may open; empty until a grown-up chose (or the defaults were ticked). */
+    static java.util.Set<String> allowed(Context c) {
+        return new java.util.HashSet<>(prefs(c).getStringSet("allowed", new java.util.HashSet<>()));
+    }
+
+    static boolean appsChosen(Context c) {
+        return prefs(c).contains("allowed");
+    }
+
+    static void setAllowed(Context c, java.util.Set<String> packages) {
+        prefs(c).edit().putStringSet("allowed", new java.util.HashSet<>(packages)).apply();
+    }
+
+    /** True when kids mode is on and has apps to allow: then Home is the kids' screen and the guard sends other apps back. */
+    static boolean guarding(Context c) {
+        return isActive(c) && !allowed(c).isEmpty();
     }
 
     private static String today() {

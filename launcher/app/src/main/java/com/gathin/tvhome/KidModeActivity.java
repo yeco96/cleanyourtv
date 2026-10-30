@@ -2,6 +2,7 @@ package com.gathin.tvhome;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -78,8 +79,7 @@ public final class KidModeActivity extends Activity {
             show(Stage.SET_PIN);
         } else if (mode == MODE_ACTIVATE) {
             UsageGuard.activate(this);   // a PIN is already set: turning it on needs none, turning it off does
-            Toast.makeText(this, R.string.kid_on_toast, Toast.LENGTH_LONG).show();
-            finish();
+            afterActivate();
         } else {
             show(Stage.ASK_PIN);
         }
@@ -186,8 +186,7 @@ public final class KidModeActivity extends Activity {
                         show(Stage.OPTIONS);
                     } else {
                         UsageGuard.activate(this);
-                        Toast.makeText(this, R.string.kid_on_toast, Toast.LENGTH_LONG).show();
-                        finish();
+                        afterActivate();
                     }
                 } else {
                     show(Stage.SET_PIN);
@@ -195,19 +194,28 @@ public final class KidModeActivity extends Activity {
                 }
                 break;
             case ASK_PIN:
-                if (entered.equals(getString(R.string.kid_master_pin))) {
+                int result = UsageGuard.attempt(this, entered, getString(R.string.kid_master_pin));
+                if (result == UsageGuard.PIN_MASTER) {
                     replacing = true;   // the master PIN forgets the old one: a grown-up chooses a new one
                     show(Stage.SET_PIN);
-                } else if (UsageGuard.checkPin(this, entered)) {
+                } else if (result == UsageGuard.PIN_OK) {
                     show(Stage.OPTIONS);
                 } else {
                     show(Stage.ASK_PIN);
-                    hint.setText(R.string.kid_wrong_pin);
+                    long wait = UsageGuard.waitLeftMs(this);
+                    hint.setText(wait > 0 ? getString(R.string.kid_wait, wait / 1000 + 1) : getString(R.string.kid_wrong_pin));
                 }
                 break;
             default:
                 break;
         }
+    }
+
+    /** Mode on: the first time there is no list of apps, ask for it right away. */
+    private void afterActivate() {
+        Toast.makeText(this, R.string.kid_on_toast, Toast.LENGTH_LONG).show();
+        if (!UsageGuard.appsChosen(this)) startActivity(new Intent(this, KidAppsActivity.class));
+        finish();
     }
 
     private void showOptions() {
@@ -219,6 +227,7 @@ public final class KidModeActivity extends Activity {
             Toast.makeText(this, R.string.kid_off_toast, Toast.LENGTH_LONG).show();
             finish();
         });
+        addOption(getString(R.string.kid_pick_apps), () -> startActivity(new Intent(this, KidAppsActivity.class)));
         addOption(getString(R.string.kid_change_pin), () -> {
             replacing = true;
             show(Stage.SET_PIN);

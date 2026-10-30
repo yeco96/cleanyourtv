@@ -190,4 +190,9 @@
     <string name="kid_hour_2">הילדים צפו בטלוויזיה שעתיים היום</string>
     <string name="kid_used">שימוש היום: %1$d דקות</string>
     <string name="usage_day_note">יום שמתחיל ב-5:00: %1$s</string>
+    <string name="kid_adults">מבוגרים</string>
+    <string name="kid_pick_apps">אפליקציות שהילדים יכולים לפתוח</string>
+    <string name="kid_pick_title">אפליקציות שהילדים יכולים לפתוח</string>
+    <string name="kid_pick_hint">אישור מסמן או מבטל אפליקציה. חזרה שומרת.</string>
+    <string name="kid_wait">יותר מדי ניסיונות. המתינו %1$d שניות.</string>
 </resources>

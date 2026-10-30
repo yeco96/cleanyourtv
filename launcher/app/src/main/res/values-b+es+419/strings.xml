@@ -186,4 +186,9 @@
     <string name="kid_hour_2">Los niños llevan 2 horas de TV hoy</string>
     <string name="kid_used">Usado hoy: %1$d min</string>
     <string name="usage_day_note">Día desde las 5:00: %1$s</string>
+    <string name="kid_adults">Adultos</string>
+    <string name="kid_pick_apps">Apps que pueden abrir los niños</string>
+    <string name="kid_pick_title">Apps que pueden abrir los niños</string>
+    <string name="kid_pick_hint">OK marca o desmarca una app. Atrás guarda.</string>
+    <string name="kid_wait">Demasiados intentos. Espera %1$d s.</string>
 </resources>

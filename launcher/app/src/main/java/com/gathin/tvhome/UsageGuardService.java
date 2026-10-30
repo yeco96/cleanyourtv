@@ -24,6 +24,12 @@ public final class UsageGuardService extends AccessibilityService {
     };
 
     private long lastBounce;
+
+    /** Every 30 s with a limit, every 15 s in the last three minutes of it; a minute without one. */
+    private long nextTickMs() {
+        if (UsageGuard.limitToday(this) <= 0) return TICK_MS;
+        return UsageGuard.remainingSeconds(this) <= 180 ? 15_000L : 30_000L;
+    }
     private String lastFront;
     private static UsageGuardService running;
     private android.view.View card;
@@ -133,7 +139,7 @@ public final class UsageGuardService extends AccessibilityService {
         }
         if (!ticking) {
             ticking = true;
-            handler.postDelayed(tick, UsageGuard.limitToday(this) > 0 ? 30_000L : TICK_MS);
+            handler.postDelayed(tick, nextTickMs());
         }
     }
 

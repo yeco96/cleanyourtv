@@ -256,6 +256,7 @@ public final class UsageActivity extends Activity {
     private String duration(long seconds) {
         long minutes = (seconds + 30) / 60;
         if (minutes < 60) return getString(R.string.usage_minutes, minutes);
+        if (minutes % 60 == 0) return getString(R.string.kid_hours, minutes / 60);
         return getString(R.string.usage_hours_minutes, minutes / 60, minutes % 60);
     }
 }

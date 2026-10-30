@@ -241,6 +241,9 @@ public final class KidModeActivity extends Activity {
         addOption(getString(R.string.kid_limit_weekend, limitText(UsageGuard.weekendLimit(this))),
                 () -> UsageGuard.setWeekendLimit(this, UsageLimit.nextLimit(UsageGuard.weekendLimit(this))));
         addOption(getString(R.string.kid_extra, 15), () -> UsageGuard.addExtraMinutes(this, 15));
+        if (UsageGuard.extraMinutes(this) > 0) {
+            addOption(getString(R.string.kid_remove_extra, UsageGuard.extraMinutes(this)), () -> UsageGuard.clearExtraMinutes(this));
+        }
         addOption(getString(R.string.kid_extra, 30), () -> UsageGuard.addExtraMinutes(this, 30));
         int plan = UsageGuard.schedule(this);
         addOption(plan == 0 ? getString(R.string.kid_schedule_off) : getString(R.string.kid_schedule_on,

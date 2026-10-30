@@ -202,7 +202,7 @@
     <string name="kid_schedule_off">תזמון אוטומטי: כבוי</string>
     <string name="kid_schedule_on">תזמון אוטומטי: %1$s עד %2$s</string>
     <string name="usage_kids_busiest">הילדים משתמשים הכי הרבה ב-%1$s (%2$s)</string>
-    <string name="kid_left_ten">נותרו 10 דקות טלוויזיה היום</string>
+    <string name="kid_left_ten">נותרו %1$d דקות טלוויזיה היום</string>
     <string name="kid_left_one">נותרה דקה אחת של טלוויזיה היום</string>
     <string name="kid_time_up">הזמן להיום נגמר</string>
     <string name="kid_today_of">היום: %1$s מתוך %2$s</string>
@@ -213,4 +213,6 @@
     <string name="kid_no_limit">ללא הגבלה</string>
     <string name="kid_hours">%1$d ש׳</string>
     <string name="kid_extra">הוספת %1$d דקות להיום</string>
+    <string name="kid_today_of_extra">היום: %1$s מתוך %2$s (+%3$s נוספות)</string>
+    <string name="kid_remove_extra">הסרת הזמן הנוסף של היום (%1$d דקות)</string>
 </resources>

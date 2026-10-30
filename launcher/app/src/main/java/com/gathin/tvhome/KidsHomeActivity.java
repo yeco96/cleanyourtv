@@ -93,6 +93,7 @@ public final class KidsHomeActivity extends Activity {
     private String duration(long seconds) {
         long minutes = (seconds + 30) / 60;
         if (minutes < 60) return getString(R.string.usage_minutes, minutes);
+        if (minutes % 60 == 0) return getString(R.string.kid_hours, minutes / 60);
         return getString(R.string.usage_hours_minutes, minutes / 60, minutes % 60);
     }
 
@@ -109,9 +110,11 @@ public final class KidsHomeActivity extends Activity {
         }
         boolean up = UsageGuard.timeUp(this);
         int limit = UsageGuard.limitToday(this);
-        total.setText(up ? getString(R.string.kid_time_up) : limit > 0
-                ? getString(R.string.kid_today_of, duration(all), duration((limit + UsageGuard.extraMinutes(this)) * 60L))
-                : getString(R.string.kid_today_total, duration(all)));
+        int extra = UsageGuard.extraMinutes(this);
+        total.setText(up ? getString(R.string.kid_time_up) : limit <= 0
+                ? getString(R.string.kid_today_total, duration(all))
+                : extra > 0 ? getString(R.string.kid_today_of_extra, duration(all), duration(limit * 60L), duration(extra * 60L))
+                : getString(R.string.kid_today_of, duration(all), duration(limit * 60L)));
         Set<String> allowed = UsageGuard.allowed(this);
         List<String> shown = new ArrayList<>();
         for (String pkg : allowed) {

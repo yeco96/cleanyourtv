@@ -123,6 +123,11 @@ final class UsageGuard {
         prefs(c).edit().putInt("notice", 0).apply();   // the notices before the end come again
     }
 
+    /** Takes back the extra time given today. */
+    static void clearExtraMinutes(Context c) {
+        prefs(c).edit().putInt("extra", 0).putInt("notice", 0).apply();
+    }
+
     /** Seconds the kids have left today; effectively unlimited when there is no limit. */
     static long remainingSeconds(Context c) {
         int limit = limitToday(c);
@@ -144,18 +149,19 @@ final class UsageGuard {
     static void checkNotice(Context c) {
         if (!isActive(c)) return;
         int limit = limitToday(c);
-        int code, text;
-        if (limit > 0) {   // with a limit the notices count down to it: 10 minutes left, then 1
+        int code;
+        String text;
+        if (limit > 0) {   // with a limit the notices count down to it: 10 minutes left or less, then 1
             long left = remainingSeconds(c);
             code = left <= 60 ? 2 : left <= 600 ? 1 : 0;
-            text = code == 2 ? R.string.kid_left_one : R.string.kid_left_ten;
+            text = code == 2 ? c.getString(R.string.kid_left_one) : c.getString(R.string.kid_left_ten, (left + 59) / 60);
         } else {   // without one they mark the hours used
             code = UsageLimit.hoursReached(usedSeconds(c));
-            text = code == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2;
+            text = c.getString(code == 1 ? R.string.kid_hour_1 : R.string.kid_hour_2);
         }
         if (code > noticeGiven(c)) {
             setNoticeGiven(c, code);
-            if (!UsageGuardService.card(c.getString(text))) {
+            if (!UsageGuardService.card(text)) {
                 android.widget.Toast.makeText(c.getApplicationContext(), text, android.widget.Toast.LENGTH_LONG).show();
             }
         }

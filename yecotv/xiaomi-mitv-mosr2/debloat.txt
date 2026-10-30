@@ -1,0 +1,55 @@
+# Xiaomi MiTV-MOSR2 (codename irobot), Google TV / Android 11 (SDK 30), firmware RTM5.220609.003.1493
+# MediaTek, 1.4 GB RAM, 32 bits. Stock launcher: com.google.android.apps.tv.launcherx.
+#
+# Based on examples/xiaomi-mitv-mosr4/debloat.txt (same board, firmware 1585), adjusted for what this owner uses:
+#   - kept: the media player (Media Explorer plays USB and network files), YouTube Music, Chromecast, the voice
+#     assistant, and the three updater packages (the owner wants firmware updates).
+#   - SmartShare (Miracast) is off: not used.
+# Everything is DISABLED for user 0, not uninstalled.
+#
+# Apply:  powershell -ExecutionPolicy Bypass -File tools\disable.ps1 -TvHost <tv ip> yecotv\xiaomi-mitv-mosr2\debloat.txt
+# Undo:   powershell -ExecutionPolicy Bypass -File tools\restore.ps1 -TvHost <tv ip> yecotv\xiaomi-mitv-mosr2\debloat.txt -Stock com.google.android.apps.tv.launcherx
+#
+# ORDER MATTERS on this board (see docs/devices/xiaomi-mitv-mosr4.md):
+#   1. Forget the Wi-Fi network in Settings and join it again: the one saved during setup belongs to setupwraith
+#      (check: dumpsys wifi | grep -o 'cname=[^ ]*'); disabling setupwraith while it owns the network drops Wi-Fi.
+#      Forgetting it switched USB debugging off: switch it back on.
+#   2. Apply this list (setupwraith is its last line, while launcherx is still enabled).
+#   3. Install the launcher, which disables launcherx and takes Home.
+#   Never the other way round: a reboot with launcherx off and setupwraith on can factory-reset the TV.
+#
+# Not on this list on purpose, do not add: com.mitv.livetv (the HDMI/source switcher lives in it), mitv.service,
+# com.mitv.overseaservice (the Netflix key), com.mediatek.* , com.mi.bluetooth, the Chromecast and remote services.
+#
+# com.mitv.tvhome.mitvplus is switched back on at every boot by the firmware. The launcher hides it
+# (hidden_apps in the theme); disable it again with: pm disable-user --user 0 com.mitv.tvhome.mitvplus
+
+com.miui.tv.analytics
+com.xiaomi.statistic
+com.xiaomi.tvqs.overseas               # Firebase analytics + DOWNLOAD_WITHOUT_NOTIFICATION
+com.google.android.partnersetup        # Google RLZ attribution pings
+com.google.android.feedback            # feedback reporter
+com.mitv.tvhome.oemtab                 # holds ACCESS_ADSERVICES_AD_ID/_ATTRIBUTION: the ad row
+com.mitv.tvhome.michannel              # Mi content rows
+com.mitv.tvhome.mitvplus               # Mi TV+ ad-funded channels (the Xiaomi TV+ tile); comes back at every boot
+com.mitv.tvhome.atv                    # PatchWall, the Xiaomi home
+com.xm.webcontent                      # Xiaomi web promo WebView
+com.mitv.toolhouse
+fusion.android.tv.demo                 # in-store demo loop
+com.xiaomi.mitv.tvmanager              # "TV Manager" cleaner
+com.xiaomo.tv.milegal                  # legal notices app
+android.autoinstalls.config.xiaomi.amelie   # silent preload installer config
+com.xiaomi.mitv.manualhelp             # on-screen manual (absent on this unit; the script skips it)
+com.android.printspooler               # print spooler
+com.xiaomi.mitv.smartshare             # Miracast: not used here
+com.xiaomi.wfdsinkhelperservice
+com.xiaomi.mimusic2                    # Mi Music
+com.google.android.play.games          # Play Games
+com.mitv.gallery                       # Gallery
+com.google.android.tungsten.setupwraith   # setup wizard; keeps a third-party launcher from owning Home. LAST, see the order above
+
+# Kept on purpose, from the MOSR4 list:
+# com.mitv.videoplayer                 # the player Media Explorer uses
+# com.xiaomi.mitv.updateservice        # firmware updates stay on
+# com.mitv.upgrader
+# com.mitv.ABUpdateStatus

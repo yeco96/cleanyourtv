@@ -1,0 +1,51 @@
+{
+  "live_tv_package": "com.mitv.livetv",
+  "app_keys": [
+    "190:com.google.android.youtube.tv",
+    "193:com.netflix.ninja",
+    "194:com.amazon.amazonvideo.livingroom"
+  ],
+  "dock_apps": [
+    "com.netflix.ninja",
+    "com.google.android.youtube.tv",
+    "se.hedekonsult.sparkle",
+    "com.diixtream.iptvplayer",
+    "com.valvesoftware.steamlink"
+  ],
+  "columns": 6,
+  "fill_dock": false,
+  "app_library": true,
+  "tile_menu": true,
+  "show_stats": false,
+  "background_color": "#090C14",
+  "wallpaper_captions": false,
+  "wallpaper_true_color": false,
+  "home_idle_clock_minutes": 2,
+  "dock_glass": true,
+  "icon_only_buttons": true,
+  "app_glow": true,
+  "glow_style": "horizon",
+  "focus_overshoot": false,
+  "advanced_effects": false,
+  "reduced_motion": false,
+  "always_show_names": true,
+  "hidden_apps": [
+    "com.mitv.tvhome.mitvplus"
+  ],
+  "tmdb_backdrops": true,
+  "tmdb_language": "es-MX",
+  "wallpaper": true,
+  "cinematic_home": false,
+  "uniform_tiles": false,
+  "dock_title": false,
+  "wallpaper_rotation_minutes": 3,
+  "ambient_glow": false,
+  "rows_below_dock": 0,
+  "wallpaper_dim": 0,
+  "tmdb_max_certification": "PG-13",
+  "dock_opacity": 80,
+  "clock_wallpaper": true,
+  "clock_wallpaper_dim": 45,
+  "clock_glow": false,
+  "memory_button": true
+}

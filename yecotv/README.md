@@ -1,0 +1,116 @@
+# yecoTV
+
+Mi versión del launcher de [CleanYourTV](https://github.com/Gathin23/cleanyourtv), en la rama `yecoTV` de este fork.
+Esta carpeta guarda **lo mío**: cómo dejé cada TV y cómo repetirlo. Lo que no está aquí es del proyecto original.
+
+Una carpeta por modelo de TV: `yecotv/<modelo>/` con su `debloat.txt` y su `theme/config.json`.
+
+| TV | Estado |
+|---|---|
+| [`xiaomi-mitv-mosr2`](xiaomi-mitv-mosr2/) | Google TV, la primera. Lista, el 29 de octubre de 2026 |
+| [`xiaomi-mitv-mooq2`](xiaomi-mitv-mooq2/) | Android TV (Mi TV P1 43"). Lista, el 29 de octubre de 2026 |
+
+## Qué añade respecto al original
+
+El original no tiene red en el launcher. Este sí, y por eso **no se propone al proyecto original** (`AGENTS.md` lo excluye).
+
+| Función | Clave de tema | Qué hace |
+|---|---|---|
+| **Seguir viendo** | `continue_row` | Fila bajo el dock con lo que las apps publican en la guía de la TV (hoy solo Netflix lo hace). Descarga carátulas. |
+| **Fondos de TMDb** | `tmdb_backdrops` | 20 películas al día de fondo, con título, estrellas, año, géneros, duración y sinopsis. |
+| Idioma, ritmo, clasificación | `tmdb_language`, `tmdb_rotation_seconds`, `tmdb_max_certification` | Español de México, una película cada 25 s, hasta PG-13. |
+| **Reposo con películas** | `clock_wallpaper` | El protector del launcher muestra la película detrás del reloj, una por minuto, con su título pequeño abajo a la izquierda. |
+| **Botón de memoria** | `memory_button` | Botón en la barra superior que cierra las apps en segundo plano y dice cuánta memoria quedó libre. |
+
+Detalle de cada clave: [`themes/README.md`](../themes/README.md). Capturas: [`docs/switches.md`](../docs/switches.md).
+
+## Reproducir una TV desde cero (Windows, PowerShell)
+
+Requisitos en el PC: Python 3, Docker y estar en la misma red que la TV. No hace falta JDK ni SDK de Android (se compila en Docker).
+En la TV: Ajustes, Preferencias del dispositivo, Acerca de, OK siete veces en *Build*, y activar **Depuración USB**.
+
+```powershell
+# 0. Una vez
+python -m venv tools\venv; tools\venv\Scripts\python.exe -m pip install -r tools\requirements.txt
+docker build -t cleanyourtv-android-build tools\docker        # primera vez: unos minutos
+
+# 1. Comprobar la conexión (acepta "¿Permitir depuración USB?" en la TV, con "Permitir siempre")
+$env:TV_HOST = "<ip de la tv>"
+tools\venv\Scripts\python.exe -I tools\tv.py --probe
+
+# 2. Compilar el launcher
+powershell -ExecutionPolicy Bypass -File tools\docker-build.ps1
+```
+
+Si `docker-build.ps1` falla con `No such image` en PowerShell 5.1, ejecuta antes el `docker build` de arriba: la comprobación escribe en stderr y el script lo toma por error.
+
+```powershell
+# 3. Debloat. Lee antes el ORDEN en el encabezado de debloat.txt (olvidar y volver a unir el Wi-Fi primero)
+tools\venv\Scripts\python.exe -I tools\recovery.py --save yecotv\<modelo>\debloat.txt
+powershell -ExecutionPolicy Bypass -File tools\disable.ps1 -TvHost $env:TV_HOST yecotv\<modelo>\debloat.txt
+
+# 4. Instalar el launcher (la APK ya compilada). Quita el launcher de fábrica y toma el Home.
+$env:SKIP_BUILD = '1'
+powershell -ExecutionPolicy Bypass -File launcher\build-and-install.ps1 -TvHost $env:TV_HOST -StockLauncher <paquete del launcher de fábrica> -InputKeyService -HomeKeyService
+
+# 5. Permiso de la guía de programas (para Seguir viendo)
+tools\venv\Scripts\python.exe -I tools\tv.py "pm grant com.gathin.tvhome android.permission.READ_TV_LISTINGS"
+
+# 6. Tema primero (crea la carpeta de la app), luego la clave de TMDb (ver abajo)
+powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost $env:TV_HOST yecotv\<modelo>\theme
+tools\venv\Scripts\python.exe -I tools\tv.py --push tmdb_key.txt /sdcard/Android/data/com.gathin.tvhome/files/tmdb_key.txt
+
+# 7. Protector de pantalla del launcher
+tools\venv\Scripts\python.exe -I tools\tv.py "settings put secure screensaver_components com.gathin.tvhome/.ClockDream"
+```
+
+**Repetir el paso 5 cada vez que se reinstala el launcher** si no se hizo el 4 con el mismo launcher: el permiso sobrevive a las actualizaciones, no a una instalación desde cero.
+
+### La clave de TMDb
+
+Es gratuita (themoviedb.org, Ajustes, API, la **API Key v3** de 32 caracteres; no el token de lectura).
+Va en `tmdb_key.txt` en la raíz del repo, **una sola línea**. Está en `.gitignore` y **nunca debe subirse**.
+En la TV queda en un archivo de la carpeta del launcher; no va dentro de la APK ni de ningún tema.
+
+**Si el envío falla con `secure_mkdirs failed`** (la TV no deja al shell escribir en `Android/data`, como la MOOQ2), se manda por el proveedor del launcher, que acepta ese archivo. Comando en [`xiaomi-mitv-mooq2/`](xiaomi-mitv-mooq2/README.md#la-clave-de-tmdb).
+
+### Las películas no se pierden al cambiar de tema
+
+Viven en `files/tmdb/`, no en `wallpapers/`. Aplicar un tema no las borra. Una vez al día se renuevan solas (la próxima vez que el Home aparece pasadas 24 h), o si quedan menos de 5.
+
+## Volver atrás
+
+| Qué | Cómo |
+|---|---|
+| Solo el protector de Google | `settings put secure screensaver_components com.google.android.apps.tv.dreamx/.service.Backdrop` |
+| Tema anterior | `tools\theme.ps1 -TvHost <ip> <carpeta del tema>` o `-Reset` |
+| Todo (volver al Home de fábrica) | `tools\restore.ps1 -TvHost <ip> yecotv\<modelo>\debloat.txt -Stock <paquete del launcher de fábrica>` |
+
+`restore.ps1` usa el registro que `recovery.py` guardó **antes** del primer cambio, en `%USERPROFILE%\.cleanyourtv\`
+(un archivo por TV y lista). **Es la única copia: no lo borres.** Sin él, ver `docs/restore.md`.
+
+## Mantenimiento
+
+- **Tras actualizar el firmware** (las actualizaciones siguen activas): `tools\venv\Scripts\python.exe -I tools\check.py yecotv\<modelo>\debloat.txt --fix` vuelve a desactivar lo que regresó. Hay que reactivar la depuración USB antes.
+- **Cerrar la depuración** al terminar: es ADB en texto plano por la red. `tools\adb-closed.py <ip>` comprueba que el puerto está cerrado.
+- **Compilar y probar** antes de instalar: `testReleaseUnitTest lintRelease assembleRelease` en `launcher/` (con Docker). Hoy: 331 tests, lint sin errores.
+
+## Lo que aprendí (para no repetirlo)
+
+- **El recortador de recursos del build conserva todo lo que una constante de texto podría nombrar**, porque `AppAdapter` busca dibujables por nombre (`getIdentifier`). Una constante como `"ok"` o `"failed"` hizo que la APK pasara de 593 KB a 640 KB. Los textos que se guardan o comparan llevan un prefijo (`tmdb:ok`).
+- **`rows_below_dock: 0` baja el dock al borde inferior.** La fila Seguir viendo no cabe debajo: espera oculta y aparece al pulsar Abajo. La altura que se le reserva depende del tamaño de las tarjetas, y se recalcula cuando cambia.
+- **Las tarjetas de Seguir viendo no deben aceptar foco mientras el dock lo tiene**, o Arriba desde el dock las encuentra a ellas y no a la barra superior.
+- **El protector activo de fábrica era el de Google** (`dreamx/.service.Backdrop`), no el del launcher. Para probar el del launcher sin esperar: `am start -n com.android.systemui/.Somnambulator`.
+- **El permiso `READ_TV_LISTINGS` no lo tiene ADB.** Consultar la guía desde `adb shell` devuelve 0 filas aunque la app vea datos. El informe del launcher está en `files/content-report.txt`.
+- **Git Bash convierte las rutas** que empiezan por `/` en rutas de Windows (`/data/local/tmp/x` pasa a `C:/Program Files/Git/...`). Con `MSYS_NO_PATHCONV=1` no lo hace.
+- **Una TV con mucha guía publicada** (Pluto TV, un sintonizador) puede tener cientos de filas: la MOOQ2 tenía 762 de "para ver después". El launcher lee solo las de "seguir viendo" y muestra 20.
+- **PowerShell 5.1**: `$(...)` dentro de un comando para la TV se evalúa en el PC; usa Bash o comillas simples. Un aviso de Java en stderr aborta los scripts con `ErrorActionPreference Stop`.
+- **El CI de este fork tiene el límite de la APK en 600 KB** (el original, 576 KB). La APK pesa unos 596 KB.
+- La suite de Python en Windows da fallos que ya existen en el original (permisos, `git` ausente). Se compara contra ellos, no contra cero.
+
+## Qué falta por comprobar
+
+- El **botón de memoria**: está en la TV y con el permiso concedido, pero nadie lo ha pulsado. El resultado queda en el registro (`TvHome.Memory`).
+- La **línea de estado de TMDb** en los ajustes del launcher (esa pantalla no se puede abrir por ADB).
+- La secuencia completa con el mando por **Seguir viendo**: Abajo, Izquierda y Derecha, Arriba y OK sobre una tarjeta.
+- Las funciones de red no se han revisado contra una auditoría externa: el launcher habla solo con `api.themoviedb.org`, `image.tmdb.org` y las direcciones de carátulas que cada app publica.

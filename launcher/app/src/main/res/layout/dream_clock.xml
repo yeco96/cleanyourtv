@@ -71,4 +71,58 @@
             android:letterSpacing="0.14"
             android:textAllCaps="true" />
     </LinearLayout>
+
+    <!-- tmdb_backdrops: the film behind the clock, small and soft in the bottom left corner. Hidden otherwise. -->
+    <LinearLayout
+        android:id="@+id/dreamCaption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="56dp"
+        android:layout_marginBottom="40dp"
+        android:alpha="0"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/dreamCaptionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@string/font_medium"
+            android:maxLines="1"
+            android:shadowColor="#D9000000"
+            android:shadowRadius="12"
+            android:shadowDy="1"
+            android:textColor="#E6FFFFFF"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/dreamCaptionFacts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@string/font_medium"
+            android:maxLines="1"
+            android:shadowColor="#D9000000"
+            android:shadowRadius="10"
+            android:shadowDy="1"
+            android:textColor="#FFFFD700"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/dreamCaptionOverview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="@string/font_regular"
+            android:maxLines="2"
+            android:shadowColor="#D9000000"
+            android:shadowRadius="10"
+            android:shadowDy="1"
+            android:textColor="#BFE2E8F0"
+            android:textSize="13sp" />
+    </LinearLayout>
 </FrameLayout>

@@ -15,6 +15,7 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -64,6 +65,13 @@ final class ClockScene {
     private final Set<String> shown = new java.util.HashSet<>();
     private Map<String, Set<String>> moods;
     private String latitude, longitude;
+    /** tmdb_backdrops: the film's title, stars and overview, small in a corner (dream_clock), over the picture. */
+    private final View caption;
+    private final TextView captionTitle, captionFacts, captionOverview;
+    private Map<String, WallpaperCaptions.Movie> movies = Collections.emptyMap();
+    private boolean captionOn;
+    /** How strong the caption is: there to be read when looked for, not to compete with the picture. */
+    private static final float CAPTION_ALPHA = 0.8f;
 
     private final Runnable tick = new Runnable() {
         @Override
@@ -79,6 +87,10 @@ final class ClockScene {
     ClockScene(View root) {
         content = root.findViewById(R.id.dreamContent);
         ambient = root.findViewById(R.id.dreamAmbient);
+        caption = root.findViewById(R.id.dreamCaption);
+        captionTitle = root.findViewById(R.id.dreamCaptionTitle);
+        captionFacts = root.findViewById(R.id.dreamCaptionFacts);
+        captionOverview = root.findViewById(R.id.dreamCaptionOverview);
         glow = new GradientDrawable();
         glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambient.setBackground(glow);
@@ -102,6 +114,7 @@ final class ClockScene {
     void stop() {
         handler.removeCallbacksAndMessages(null);   // the tick and any glow steps still queued
         content.animate().cancel();
+        caption.animate().cancel();
         ambient.animate().cancel();   // a cross-fade cut short must not leave the picture half transparent
         ambient.setAlpha(1f);
         wallpaperGeneration++;   // a decode still running must not attach its picture to a stopped scene
@@ -150,6 +163,11 @@ final class ClockScene {
             this.shown.addAll(ctx.getSharedPreferences("wallpaper_rotation", Context.MODE_PRIVATE)
                     .getStringSet("shown", Collections.emptySet()));
             this.shown.add(wallpaperFile.getName());
+            if (cfg.tmdbBackdrops) {
+                movies = WallpaperCaptions.readMovies(wallpaperFile.getParentFile());
+                captionOn = !movies.isEmpty();
+                captionOverview.setMaxWidth(Math.round(ctx.getResources().getDisplayMetrics().widthPixels * 0.45f));
+            }
             moods = cfg.wallpaperMoods;
             latitude = moods.isEmpty() ? "" : ctx.getString(R.string.latitude);
             longitude = moods.isEmpty() ? "" : ctx.getString(R.string.longitude);
@@ -174,6 +192,7 @@ final class ClockScene {
                     return;
                 }
                 wallpaperShown = true;
+                showCaption();
                 // As the image, not the background: a background is stretched to the view, so a picture of
                 // another shape than the screen would be distorted. centerCrop scales and crops it like Home.
                 ambient.setBackground(null);
@@ -191,6 +210,37 @@ final class ClockScene {
                 }).start();
             });
         }, "clock-wallpaper").start();
+    }
+
+    /**
+     * The film on screen, named small in the corner: title, stars with year and genres, and the first lines of the
+     * overview. It melts out and in with the picture; a picture with no film (or no captions) shows nothing.
+     */
+    private void showCaption() {
+        WallpaperCaptions.Movie movie = captionOn && wallpaperFile != null ? movies.get(wallpaperFile.getName()) : null;
+        caption.animate().cancel();
+        if (movie == null) {
+            caption.setVisibility(View.GONE);
+            return;
+        }
+        Runnable fill = () -> {
+            captionTitle.setText(movie.title);
+            captionFacts.setText(WallpaperPlayer.stars(movie.facts));
+            captionFacts.setVisibility(movie.facts.isEmpty() ? View.GONE : View.VISIBLE);
+            String overview = WallpaperCaptions.shorten(movie.overview, 120);
+            captionOverview.setText(overview);
+            captionOverview.setVisibility(overview.isEmpty() ? View.GONE : View.VISIBLE);
+        };
+        caption.setVisibility(View.VISIBLE);
+        if (caption.getAlpha() == 0f) {
+            fill.run();
+            caption.animate().alpha(CAPTION_ALPHA).setDuration(900).start();
+        } else {
+            caption.animate().alpha(0f).setDuration(500).withEndAction(() -> {
+                fill.run();
+                caption.animate().alpha(CAPTION_ALPHA).setDuration(900).start();
+            }).start();
+        }
     }
 
     /** WallpaperPlayer's decode: sampled and scaled down to cover the screen, never bigger than 4K. */
@@ -256,7 +306,8 @@ final class ClockScene {
     private void placeClock() {
         View parent = (View) content.getParent();
         int maxX = Math.max(0, parent.getWidth() - content.getWidth());
-        int maxY = Math.max(0, parent.getHeight() - content.getHeight());
+        // With the film's caption in the bottom corner the clock keeps to the upper part of the screen.
+        int maxY = Math.max(0, (int) (parent.getHeight() * (captionOn ? 0.68f : 1f)) - content.getHeight());
         float x = maxX * (0.1f + 0.8f * random.nextFloat());
         float y = maxY * (0.1f + 0.8f * random.nextFloat());
         content.setX(x);

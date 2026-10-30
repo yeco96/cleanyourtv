@@ -495,7 +495,7 @@ final class WallpaperPlayer {
     }
 
     /** The stars (the text before the first bullet) in gold, the rest in the overview's soft white. */
-    private static CharSequence stars(String facts) {
+    static CharSequence stars(String facts) {
         int bullet = facts.indexOf('•');
         if (bullet <= 0) return facts;
         SpannableString span = new SpannableString(facts);

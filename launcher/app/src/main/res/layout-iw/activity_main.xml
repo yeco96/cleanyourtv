@@ -363,15 +363,6 @@
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
-                    android:id="@+id/btnMemory"
-                    style="@style/TopButtonIcon"
-                    android:visibility="gone"
-                    android:contentDescription="@string/memory_button"
-                    android:drawableStart="@drawable/ic_memory"
-                    android:nextFocusDown="@+id/grid" />
-
-
-                <TextView
                     android:id="@+id/btnReorder"
                     style="@style/TopButtonIcon"
                     android:contentDescription="@string/reorder"

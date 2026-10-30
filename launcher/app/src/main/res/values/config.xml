@@ -378,10 +378,6 @@
          image.tmdb.org into a folder of its own (tmdb/, which a theme push does not clear; the theme's wallpapers are
          not used while this is on). false (the default) goes nowhere. A theme sets it with "tmdb_backdrops": true, and "tmdb_language" (es-MX, en-US). -->
     <bool name="tmdb_backdrops">false</bool>
-    <!-- A round button in the top bar that closes the apps left running in the background (MemoryCleaner) and says
-         how much memory is free. It never closes the launcher, a system app, or an app with an accessibility service
-         on. false (the default) leaves the bar as it was. A theme sets it with "memory_button": true. -->
-    <bool name="memory_button">false</bool>
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if
          the dock, its title and this many rows would not otherwise fit the screen height. -->

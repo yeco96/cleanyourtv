@@ -20,7 +20,6 @@ El original no tiene red en el launcher. Este sí, y por eso **no se propone al 
 | **Fondos de TMDb** | `tmdb_backdrops` | 20 películas al día de fondo, con título, estrellas, año, géneros, duración y sinopsis. |
 | Idioma, ritmo, clasificación | `tmdb_language`, `tmdb_rotation_seconds`, `tmdb_max_certification` | Español de México, una película cada 25 s, hasta PG-13. |
 | **Reposo con películas** | `clock_wallpaper` | El protector del launcher muestra la película detrás del reloj, una por minuto, con su título pequeño abajo a la izquierda. |
-| **Botón de memoria** | `memory_button` | Botón en la barra superior que cierra las apps en segundo plano y dice cuánta memoria quedó libre. |
 
 Detalle de cada clave: [`themes/README.md`](../themes/README.md). Capturas: [`docs/switches.md`](../docs/switches.md).
 
@@ -101,6 +100,7 @@ Viven en `files/tmdb/`, no en `wallpapers/`. Aplicar un tema no las borra. Una v
 - **`rows_below_dock: 0` baja el dock al borde inferior.** La fila Seguir viendo no cabe debajo: espera oculta y aparece al pulsar Abajo. La altura que se le reserva depende del tamaño de las tarjetas, y se recalcula cuando cambia.
 - **Las tarjetas de Seguir viendo no deben aceptar foco mientras el dock lo tiene**, o Arriba desde el dock las encuentra a ellas y no a la barra superior.
 - **El protector activo de fábrica era el de Google** (`dreamx/.service.Backdrop`), no el del launcher. Para probar el del launcher sin esperar: `am start -n com.android.systemui/.Somnambulator`.
+- **Una app normal no puede cerrar a otras en estas TVs.** Se probó un botón de memoria con `killBackgroundProcesses`: Android contestó `Invalid packageName` para cada app y no cerró ninguna (siempre "+0 MB"), mientras que `am kill` desde ADB sí cerraba YouTube y la Play Store. `FORCE_STOP_PACKAGES` no se puede conceder por ADB (es de firma). Se quitó el botón. Si hace falta liberar memoria: `am kill <paquete>` desde el PC, o desactivar lo que se conserva (el asistente de voz usa unos 290 MB).
 - **El permiso `READ_TV_LISTINGS` no lo tiene ADB.** Consultar la guía desde `adb shell` devuelve 0 filas aunque la app vea datos. El informe del launcher está en `files/content-report.txt`.
 - **Git Bash convierte las rutas** que empiezan por `/` en rutas de Windows (`/data/local/tmp/x` pasa a `C:/Program Files/Git/...`). Con `MSYS_NO_PATHCONV=1` no lo hace.
 - **Una TV con mucha guía publicada** (Pluto TV, un sintonizador) puede tener cientos de filas: la MOOQ2 tenía 762 de "para ver después". El launcher lee solo las de "seguir viendo" y muestra 20.
@@ -110,7 +110,6 @@ Viven en `files/tmdb/`, no en `wallpapers/`. Aplicar un tema no las borra. Una v
 
 ## Qué falta por comprobar
 
-- El **botón de memoria**: está en la TV y con el permiso concedido, pero nadie lo ha pulsado. El resultado queda en el registro (`TvHome.Memory`).
 - La **línea de estado de TMDb** en los ajustes del launcher (esa pantalla no se puede abrir por ADB).
 - La secuencia completa con el mando por **Seguir viendo**: Abajo, Izquierda y Derecha, Arriba y OK sobre una tarjeta.
 - Las funciones de red no se han revisado contra una auditoría externa: el launcher habla solo con `api.themoviedb.org`, `image.tmdb.org` y las direcciones de carátulas que cada app publica.

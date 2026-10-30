@@ -27,7 +27,7 @@ Todo de fábrica: ningún paquete desactivado, ningún servicio de accesibilidad
 
 - **Debloat**: Xiaomi y Google (telemetría), PatchWall, canales y Xiaomi TV+, el gestor "TV Manager", el puente de Alexa, la galería, **los dos protectores de pantalla de fábrica**, el bloqueo parental de Xiaomi, el menú de fábrica y la demostración de tienda, Play Juegos y Play Películas.
 - **Conservado a propósito**: el asistente de voz (el botón del micrófono sigue), YouTube Music, el reproductor USB y el de Mi, Chromecast y Miracast, las entradas HDMI y AV, la tecla de Netflix y las actualizaciones de firmware.
-- **Tema**: el mismo de la otra TV (fondos de TMDb en español de México, hasta PG-13, 25 s por película, reposo con la película y el botón de memoria), con el dock **Netflix, YouTube, Disney+ y Diixtream** y Live TV en `com.mediatek.wwtv.tvcenter`.
+- **Tema**: el mismo de la otra TV (fondos de TMDb en español de México, hasta PG-13, 25 s por película y reposo con la película), con el dock **Netflix, YouTube, Disney+ y Diixtream** y Live TV en `com.mediatek.wwtv.tvcenter`.
 - **Protector**: el del launcher (`ClockDream`), con la película, la hora y su título abajo. Comprobado en la TV, en 1080p.
 
 ## El mando
@@ -62,5 +62,5 @@ Hay que haber aplicado un tema antes, para que exista la carpeta de la app.
 ## Pendiente
 
 - **Depuración USB**: sigue activa. Cerrarla al terminar.
-- El **botón de memoria** y la secuencia por la fila Seguir viendo con el mando siguen sin probarse, igual que en la otra TV.
+- La secuencia por la fila Seguir viendo con el mando sigue sin probarse, igual que en la otra TV.
 - No se instalaron add-ons (en la otra: Sources, Capacity Stats, Sleep Timer, Scoreboard y Bluetooth Connect).

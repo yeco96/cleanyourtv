@@ -43,7 +43,7 @@ Los dos servicios de accesibilidad **cuestan la repetición al mantener pulsado 
 - **Dock** de 5 apps abajo: Netflix, YouTube, Sparkle TV, Diixtream, Steam Link. `rows_below_dock: 0`.
 - **Fondo**: las películas de TMDb, una cada 25 s (baraja sin repetir), con el panel de datos encima del dock.
 - **Seguir viendo** espera oculta debajo del dock y sale al pulsar Abajo. Solo Netflix publica ahí.
-- **Barra superior**: Entradas, Wi-Fi, **botón de memoria**, Ajustes.
+- **Barra superior**: Entradas, Wi-Fi, Ajustes.
 - **Reposo**: el protector del launcher, no el de Google.
 
 ## Particularidades de esta TV

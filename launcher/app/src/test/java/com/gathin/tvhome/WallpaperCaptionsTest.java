@@ -36,6 +36,52 @@ public class WallpaperCaptionsTest {
     }
 
     @Test
+    public void aNameStopsAtTheNextTab() {
+        Map<String, String> names = WallpaperCaptions.parse(Arrays.asList("007.jpg\tDune\t★★★★ 8.1 • 2021\tA duke's son."));
+        assertEquals("Dune", names.get("007.jpg"));
+    }
+
+    @Test
+    public void readsTitleFactsAndOverview() {
+        Map<String, WallpaperCaptions.Movie> movies = WallpaperCaptions.parseMovies(Arrays.asList(
+                "01_1.jpg\tDune\t★★★★ 8.1 • 2021 • 2h 35m\tA duke's son."));
+        WallpaperCaptions.Movie dune = movies.get("01_1.jpg");
+        assertEquals("Dune", dune.title);
+        assertEquals("★★★★ 8.1 • 2021 • 2h 35m", dune.facts);
+        assertEquals("A duke's son.", dune.overview);
+        assertTrue(dune.hasDetails());
+    }
+
+    @Test
+    public void aMovieWithoutFactsOrOverviewHasNoDetails() {
+        Map<String, WallpaperCaptions.Movie> movies = WallpaperCaptions.parseMovies(Arrays.asList("02.jpg\tDusk"));
+        assertEquals("", movies.get("02.jpg").facts);
+        assertEquals("", movies.get("02.jpg").overview);
+        assertFalse(movies.get("02.jpg").hasDetails());
+    }
+
+    @Test
+    public void shortensAtTheEndOfASentence() {
+        String text = "Riley es una chica que disfruta. Aunque su vida ha estado marcada por la Alegria, tambien se ve afectada.";
+        assertEquals("Riley es una chica que disfruta.", WallpaperCaptions.shorten(text, 60));
+    }
+
+    @Test
+    public void shortensAtAWordWhenNoSentenceEndsInTheSecondHalf() {
+        String text = "Una joven mecanica de autos de carreras finge estar comprometida con la estrella mas polemica";
+        String cut = WallpaperCaptions.shorten(text, 50);
+        assertTrue(cut.endsWith("..."));
+        assertTrue(cut.length() <= 50);
+        assertFalse(cut.contains("compro"));
+    }
+
+    @Test
+    public void aShortTextIsLeftAlone() {
+        assertEquals("Dune.", WallpaperCaptions.shorten("  Dune.  ", 140));
+        assertEquals("", WallpaperCaptions.shorten(null, 140));
+    }
+
+    @Test
     public void laterLineWinsForTheSameFile() {
         Map<String, String> names = WallpaperCaptions.parse(Arrays.asList("005.jpg\tOld", "005.jpg\tNew"));
         assertEquals("New", names.get("005.jpg"));

@@ -89,6 +89,12 @@ final class Config {
     final boolean advancedEffects;
     /** The Seguir viendo row under the dock (config.xml / theme continue_row, or the on-TV choice); off reads nothing. */
     final boolean continueRow;
+    /** The TMDb backdrops and their movie panel (config.xml / theme tmdb_backdrops); off, nothing goes online for them. */
+    final boolean tmdbBackdrops;
+    /** The language of the TMDb titles and overviews (theme tmdb_language, such as es-MX); empty follows the TV. */
+    final String tmdbLanguage;
+    /** Seconds each TMDb backdrop stays up (theme tmdb_rotation_seconds, 10 to 3600); only with tmdb_backdrops. */
+    final int tmdbRotationSeconds;
     final int rowsBelowDock;
     final boolean shamsiDate;
     /** Lunisolar date under the date (config.json lunar_date), computed for lunarUtcOffset hours east of UTC (-1: by locale). */
@@ -283,8 +289,11 @@ final class Config {
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
                    Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
-                   int openOnStartNetworkWait, boolean iconOnlyVpn, boolean continueRow) {
+                   int openOnStartNetworkWait, boolean iconOnlyVpn, boolean continueRow, boolean tmdbBackdrops, String tmdbLanguage, int tmdbRotationSeconds) {
         this.continueRow = continueRow;
+        this.tmdbRotationSeconds = tmdbRotationSeconds;
+        this.tmdbBackdrops = tmdbBackdrops;
+        this.tmdbLanguage = tmdbLanguage;
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
         this.inputKeycodes = inputKeycodes;
@@ -440,6 +449,9 @@ final class Config {
         int rowsBelow = res.getInteger(R.integer.rows_below_dock);
         boolean animations = res.getBoolean(R.bool.animations);
         boolean continueRow = res.getBoolean(R.bool.continue_row);
+        boolean tmdbBackdrops = res.getBoolean(R.bool.tmdb_backdrops);
+        String tmdbLanguage = "";
+        int tmdbRotationSeconds = 25;
         boolean advancedEffects = res.getBoolean(R.bool.advanced_effects);
         boolean shamsi = res.getBoolean(R.bool.shamsi_date);
         boolean lunar = res.getBoolean(R.bool.lunar_date);
@@ -550,6 +562,9 @@ final class Config {
             rowsBelow = integer(json, "rows_below_dock", rowsBelow, 0, 3);
             animations = bool(json, "animations", animations);
             continueRow = bool(json, "continue_row", continueRow);
+            tmdbBackdrops = bool(json, "tmdb_backdrops", tmdbBackdrops);
+            tmdbLanguage = string(json, "tmdb_language", tmdbLanguage).trim();
+            tmdbRotationSeconds = integer(json, "tmdb_rotation_seconds", tmdbRotationSeconds, 10, 3600);
             advancedEffects = bool(json, "advanced_effects", advancedEffects);
             shamsi = bool(json, "shamsi_date", shamsi);
             lunar = bool(json, "lunar_date", lunar);
@@ -694,7 +709,7 @@ final class Config {
                 consumeVolumeKeys, powerOnHome, homeLongPressHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly,
-                Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn, continueRow);
+                Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn, continueRow, tmdbBackdrops, tmdbLanguage, tmdbRotationSeconds);
     }
 
     /**

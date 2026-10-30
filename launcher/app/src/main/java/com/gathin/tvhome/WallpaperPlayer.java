@@ -5,15 +5,23 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.File;
@@ -55,6 +63,17 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
+    /** tmdb_backdrops: the movie panel (title, stars and facts, overview) in place of the one-line caption. */
+    private final boolean tmdb;
+    private final Config config;
+    private TextView movieTitle, movieFacts, movieOverview;
+    private LinearLayout moviePanel;
+    /** tmdb_backdrops: the cinematic scrims (left, bottom and top gradients in one layer) and the dim over the picture. */
+    private View scrim, dim;
+    /** How dark the picture is while the focus is on the dock, and while it is down in the app rows. */
+    private static final float DIM_DOCK = 0.25f, DIM_GRID = 0.75f;
+    private Map<String, WallpaperCaptions.Movie> movies = Collections.emptyMap();
+    private boolean panelVisible = true;
     /** wallpaper_moods: the collection's groups by time of day; empty rotates through all of it. */
     private final Map<String, Set<String>> moods;
     /** config.xml latitude and longitude for the sun's times, and today's {sunrise, sunset} once worked out. */
@@ -64,12 +83,17 @@ final class WallpaperPlayer {
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
         this.root = root;
+        this.config = config;
+        tmdb = config.tmdbBackdrops;
         backgroundColor = config.backgroundColor;
         files = new ArrayList<>(config.wallpapers);
-        interval = config.wallpaperRotationMinutes * 60_000L;
+        // TMDb backdrops turn over on their own timer, in seconds (tmdb_rotation_seconds); a theme's own wallpapers
+        // keep the minutes, checked once a minute by Home.
+        interval = config.tmdbBackdrops ? config.tmdbRotationSeconds * 1000L : config.wallpaperRotationMinutes * 60_000L;
         bitmapConfig = config.wallpaperTrueColor ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565;
         // The dim is painted into the picture (decode), so no full-screen shade layer is drawn on every frame.
-        dimColor = config.wallpaperDim > 0 ? (config.wallpaperDim * 255 / 100) << 24 : 0;
+        // With tmdb_backdrops the dim is a layer of its own (it changes with the focus), not painted into the picture.
+        dimColor = config.wallpaperDim > 0 && !config.tmdbBackdrops ? (config.wallpaperDim * 255 / 100) << 24 : 0;
         order = config.wallpaperOrder;
         preferences = context.getSharedPreferences("wallpaper_rotation", Context.MODE_PRIVATE);
         moods = config.wallpaperMoods;
@@ -90,12 +114,58 @@ final class WallpaperPlayer {
         image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         names = config.wallpaperCaptions && config.wallpaperEnabled && !files.isEmpty()
                 ? WallpaperCaptions.read(files.get(0).getParentFile()) : Collections.emptyMap();
-        caption = names.isEmpty() ? null : makeCaption(context, root);
+        caption = names.isEmpty() || tmdb ? null : makeCaption(context, root);
+        if (tmdb) {
+            if (!files.isEmpty()) movies = WallpaperCaptions.readMovies(files.get(0).getParentFile());
+            scrim = makeScrim(context);
+            dim = new View(context);
+            dim.setBackgroundColor(0xFF000000);
+            dim.setAlpha(DIM_DOCK);
+            dim.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            makeMoviePanel(context, root);
+        }
         if (config.wallpaperEnabled && !files.isEmpty()) {
-            root.addView(image, 0, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            attach();
             showFirst();
         }
+    }
+
+    /** The picture goes under everything; with tmdb_backdrops the scrims and the dim go right over it. */
+    private void attach() {
+        if (image.getParent() != null) return;
+        ViewGroup.LayoutParams fill = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        root.addView(image, 0, fill);
+        if (tmdb) {
+            root.addView(scrim, 1, fill);
+            root.addView(dim, 2, fill);
+        }
+    }
+
+    /**
+     * The cinematic vignette: dark where the text sits (a gradient from the left edge, one from the bottom, a light
+     * one from the top), clear over the rest of the picture. One static layer, drawn once into a texture, so a
+     * bright backdrop never costs the text its contrast and the picture costs nothing per frame.
+     */
+    private View makeScrim(Context context) {
+        GradientDrawable left = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{0xE6000000, 0x73000000, 0x00000000});
+        GradientDrawable bottom = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[]{0xD9000000, 0x73000000, 0x00000000});
+        GradientDrawable top = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x73000000, 0x00000000});
+        LayerDrawable layers = new LayerDrawable(new GradientDrawable[]{left, bottom, top});
+        layers.setLayerGravity(0, Gravity.START);
+        layers.setLayerSize(0, Math.round(width * 0.62f), height);
+        layers.setLayerGravity(1, Gravity.BOTTOM);
+        layers.setLayerSize(1, width, Math.round(height * 0.55f));
+        layers.setLayerGravity(2, Gravity.TOP);
+        layers.setLayerSize(2, width, Math.round(height * 0.24f));
+        View view = new View(context);
+        view.setBackground(layers);
+        view.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        return view;
     }
 
     /**
@@ -128,13 +198,45 @@ final class WallpaperPlayer {
         }
     }
 
+    /** tmdb_backdrops: the next picture every {@link #interval} while Home is on screen, and nothing while it is not. */
+    private final Runnable turnOver = new Runnable() {
+        @Override
+        public void run() {
+            if (!active || closed) return;
+            update(true);
+            root.postDelayed(this, interval);
+        }
+    };
+
     void start() {
         active = true;
         update();
+        if (tmdb) {
+            root.removeCallbacks(turnOver);
+            root.postDelayed(turnOver, interval);
+            TmdbBackdrops.checkAndUpdate(root.getContext(), this, config);
+        }
+    }
+
+    /** The folder holds new pictures (the TMDb refresh swapped them in): play from them, with their movie details. */
+    void reload(File wallpapers) {
+        List<File> fresh = WallpaperRotation.images(wallpapers);
+        if (fresh.isEmpty()) return;
+        Map<String, WallpaperCaptions.Movie> freshMovies = WallpaperCaptions.readMovies(wallpapers);
+        root.post(() -> {
+            if (closed) return;
+            files.clear();
+            files.addAll(fresh);
+            movies = freshMovies;
+            attach();
+            preferences.edit().remove("image").remove("changed").apply();
+            showFirst();
+        });
     }
 
     void stop() {
         active = false;
+        root.removeCallbacks(turnOver);
     }
 
     /** Drops the wallpaper texture when Home is hidden and Android asks the process to free memory. */
@@ -162,17 +264,27 @@ final class WallpaperPlayer {
     void close() {
         active = false;
         closed = true;
+        root.removeCallbacks(turnOver);
         decoder.shutdownNow();
     }
 
     void update() {
+        update(false);
+    }
+
+    /**
+     * {@code turnOver} forces the next picture; otherwise it comes when the interval is due. With tmdb_backdrops the
+     * interval is the turnOver timer's, so Home's minute check only keeps the current picture and never turns it over.
+     */
+    private void update(boolean turnOver) {
         if (!active || closed || loading || files.isEmpty()) return;
         String previous = preferences.getString("image", "");
         // A picture outside the time of day's group (the group changed) is replaced at once, not after the interval.
         List<File> playable = playable();
         File selected = WallpaperRotation.find(playable, previous);
         long changed = preferences.getLong("changed", 0);
-        if (selected == null || WallpaperRotation.due(changed, System.currentTimeMillis(), interval)) {
+        boolean due = turnOver || (!tmdb && WallpaperRotation.due(changed, System.currentTimeMillis(), interval));
+        if (selected == null || due) {
             selected = WallpaperRotation.pick(playable, previous, order, random);
         }
         if (selected == null || selected.getName().equals(displayed)) return;
@@ -233,6 +345,10 @@ final class WallpaperPlayer {
 
     /** The displayed picture's name, faded across a change; a picture without a name hides the caption. */
     private void showCaption(boolean fade) {
+        if (tmdb) {
+            showMovie(fade);
+            return;
+        }
         if (caption == null) return;
         String name = names.get(displayed);
         caption.animate().cancel();
@@ -250,6 +366,136 @@ final class WallpaperPlayer {
             caption.setText(name);
             caption.animate().alpha(1f).setDuration(350).start();
         }).start();
+    }
+
+    /**
+     * The movie panel of tmdb_backdrops: the title (up to two lines), the stars with the year, genres and runtime,
+     * and the overview. Top left, under the clock, above everything else and never focusable.
+     */
+    private void makeMoviePanel(Context context, FrameLayout parent) {
+        float dp = context.getResources().getDisplayMetrics().density;
+        moviePanel = new LinearLayout(context);
+        moviePanel.setOrientation(LinearLayout.VERTICAL);
+        moviePanel.setFocusable(false);
+        moviePanel.setAlpha(0f);
+        movieTitle = movieText(context, 32, 0xFFFFFFFF, R.string.font_medium);
+        movieTitle.setMaxLines(2);
+        movieTitle.setMaxWidth(Math.round(width * 0.62f));
+        movieTitle.setLineSpacing(2 * dp, 1.1f);
+        movieTitle.setPadding(0, 0, Math.round(16 * dp), Math.round(4 * dp));
+        movieFacts = movieText(context, 15, 0xFFFFD700, R.string.font_medium);
+        movieFacts.setSingleLine(true);
+        movieFacts.setMaxWidth(Math.round(width * 0.62f));
+        movieFacts.setPadding(0, Math.round(4 * dp), 0, Math.round(6 * dp));
+        // The overview stays inside the left scrim: under half the screen, two lines, near-opaque with a firm shadow.
+        movieOverview = movieText(context, 14, 0xF2F1F5F9, R.string.font_regular);
+        movieOverview.setShadowLayer(12 * dp, 0, dp, 0xFF000000);
+        movieOverview.setMaxLines(2);
+        movieOverview.setMaxWidth(Math.round(width * 0.45f));
+        movieOverview.setLineSpacing(2 * dp, 1.15f);
+        moviePanel.addView(movieTitle);
+        moviePanel.addView(movieFacts);
+        moviePanel.addView(movieOverview);
+        // Anchored by its bottom, just above the dock, so a title of two lines grows upward instead of into the dock;
+        // until Home says where the dock is (anchorPanel) it sits at mid-height.
+        panelParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
+        panelParams.bottomMargin = Math.round(height * 0.5f);
+        panelParams.setMarginStart(Math.round(60 * dp));
+        parent.addView(moviePanel, panelParams);
+    }
+
+    private FrameLayout.LayoutParams panelParams;
+
+    /** Home reports where the dock band starts (y, in the root's pixels): the panel's bottom sits a little above it. */
+    void anchorPanel(int dockTopY) {
+        if (moviePanel == null || panelParams == null) return;
+        float dp = root.getContext().getResources().getDisplayMetrics().density;
+        int rootHeight = root.getHeight() > 0 ? root.getHeight() : height;
+        int bottom = Math.max(0, rootHeight - dockTopY + Math.round(14 * dp));
+        if (bottom == panelParams.bottomMargin) return;
+        panelParams.bottomMargin = bottom;
+        moviePanel.setLayoutParams(panelParams);
+    }
+
+    private static TextView movieText(Context context, int sp, int color, int font) {
+        float dp = context.getResources().getDisplayMetrics().density;
+        TextView text = new TextView(context);
+        text.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        text.setTextColor(color);
+        text.setShadowLayer(8 * dp, 0, dp, 0xE6000000);
+        text.setEllipsize(TextUtils.TruncateAt.END);
+        text.setFocusable(false);
+        try {
+            text.setTypeface(UiFont.get(context, font));
+        } catch (Exception ignored) {
+            // the system font is fine
+        }
+        return text;
+    }
+
+    /** The displayed picture's movie, faded across a change; a picture with no movie leaves the panel empty. */
+    private void showMovie(boolean fade) {
+        if (moviePanel == null) return;
+        WallpaperCaptions.Movie movie = movies.get(displayed);
+        if (movie == null) {
+            moviePanel.setAlpha(0f);
+            return;
+        }
+        Runnable fill = () -> {
+            movieTitle.setText(movie.title);
+            movieFacts.setText(stars(movie.facts));
+            movieFacts.setVisibility(movie.facts.isEmpty() ? View.GONE : View.VISIBLE);
+            String overview = WallpaperCaptions.shorten(movie.overview, 140);
+            movieOverview.setText(overview);
+            movieOverview.setVisibility(overview.isEmpty() ? View.GONE : View.VISIBLE);
+            moviePanel.setContentDescription(movie.title);
+        };
+        moviePanel.animate().cancel();
+        if (!fade || moviePanel.getAlpha() == 0f) {
+            fill.run();
+            moviePanel.setAlpha(panelVisible ? 1f : 0f);
+            return;
+        }
+        moviePanel.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+            fill.run();
+            moviePanel.animate().alpha(panelVisible ? 1f : 0f).setDuration(350).start();
+        }).start();
+    }
+
+    /** The stars (the text before the first bullet) in gold, the rest in the overview's soft white. */
+    private static CharSequence stars(String facts) {
+        int bullet = facts.indexOf('•');
+        if (bullet <= 0) return facts;
+        SpannableString span = new SpannableString(facts);
+        span.setSpan(new ForegroundColorSpan(0xFFFFD700), 0, bullet, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        span.setSpan(new ForegroundColorSpan(0xD9E2E8F0), bullet, facts.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return span;
+    }
+
+    /**
+     * The panel glides up and fades out while the focus is below the dock, and comes back with it. Only with
+     * tmdb_backdrops.
+     */
+    void setPanelVisible(boolean visible, boolean animate) {
+        if (moviePanel == null || visible == panelVisible) return;
+        panelVisible = visible;
+        float dp = root.getContext().getResources().getDisplayMetrics().density;
+        float y = visible ? 0f : -90f * dp;
+        float alpha = visible && movies.get(displayed) != null ? 1f : 0f;
+        // Down in the app rows the picture goes dark, so the tiles read over any backdrop; back on the dock it returns.
+        float dimAlpha = visible ? DIM_DOCK : DIM_GRID;
+        moviePanel.animate().cancel();
+        dim.animate().cancel();
+        if (!animate) {
+            moviePanel.setTranslationY(y);
+            moviePanel.setAlpha(alpha);
+            dim.setAlpha(dimAlpha);
+            return;
+        }
+        dim.animate().alpha(dimAlpha).setDuration(visible ? 320 : 240).start();
+        moviePanel.animate().translationY(y).alpha(alpha).setDuration(visible ? 320 : 240)
+                .setInterpolator(visible ? new DecelerateInterpolator() : new AccelerateInterpolator()).start();
     }
 
     /** Names plus sizes: enough to notice a different collection without hashing every image. */

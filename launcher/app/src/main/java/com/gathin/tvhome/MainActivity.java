@@ -709,6 +709,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // padding, leaving the glass at the XML design size until a key is pressed.
             grid.post(this::refitGlass);
             grid.post(this::placeContinueRow);
+            grid.post(this::anchorMoviePanel);
         });
 
         // Keep the glass glued to its tile while the grid scrolls.
@@ -1727,6 +1728,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         lastFocusedKey = adapter.keyAt(position);
         // A tile has the focus: the Seguir viendo cards take none, or Up from the dock finds them, not the top bar.
         if (continueRow != null) continueRow.setFocusEnabled(false);
+        // tmdb_backdrops: the movie panel belongs to the dock; below it the panel glides away.
+        if (wallpaperPlayer != null) wallpaperPlayer.setPanelVisible(position < COLUMNS, animations && !reducedMotion);
+        if (position < COLUMNS) anchorMoviePanel();
         // Focus restored before the first layout (cold start): the tile has no size yet, and the glass
         // would be sized to 2*pad. Run again once the tile is laid out.
         if (card.getWidth() == 0) {
@@ -2455,8 +2459,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void onContinueFocused(int index) {
             hideGlass();
             hideHero();
+            // The dock rides up with the grid to bring the row in: the movie panel goes, as it does for the apps.
+            if (wallpaperPlayer != null) wallpaperPlayer.setPanelVisible(false, animations && !reducedMotion);
             // With no app row visible under the dock the row sits below the screen's edge: bring it in.
             grid.post(() -> {
+                placeContinueRow();   // it has the focus now: it shows, wherever it sits
                 int over = Math.round(continueRow.view.getTranslationY()) + continueRow.view.getHeight() - grid.getHeight();
                 if (over > 0) grid.smoothScrollBy(0, over);
             });
@@ -2475,6 +2482,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             openContent(item);
         }
     };
+
+    /**
+     * tmdb_backdrops: tells the movie panel where the dock band starts, so it sits just above it wherever the dock is
+     * (rows_below_dock). Only measured while the grid rests at the top: scrolled, the dock is somewhere else.
+     */
+    private void anchorMoviePanel() {
+        if (wallpaperPlayer == null) return;
+        // The dock rests on the grid's top padding (the layout listener sets it from rows_below_dock), so its place is
+        // known from the first layout, whatever the grid has scrolled to and before any tile has the focus. Measuring
+        // the tile itself came out wrong at launch, when Home is still parking the dock by scrolling.
+        int[] grid0 = new int[2], at = new int[2];
+        grid.getLocationInWindow(grid0);
+        root.getLocationInWindow(at);
+        wallpaperPlayer.anchorPanel(grid0[1] - at[1] + grid.getPaddingTop() - Math.round(8 * density));
+    }
 
     /** The apps' programmes were read again: refill the row and make room for it (or take the room away). */
     private void onContentRead() {
@@ -2507,6 +2529,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         continueRow.view.setVisibility(View.VISIBLE);
         continueRow.view.setTranslationY(y);
+        // With the dock at the bottom (rows_below_dock 0) there is no room under it: the row waits out of sight, over the
+        // dock's own label line, until the focus goes down to it and the grid scrolls it into the screen.
+        boolean fits = y + continueRow.height() <= grid.getHeight();
+        continueRow.view.setAlpha(fits || continueRow.hasFocus() ? 1f : 0f);
     }
 
     /**
@@ -2536,6 +2562,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override public void onLibraryFocused() {
         libraryFocusPending = false;
+        if (wallpaperPlayer != null) wallpaperPlayer.setPanelVisible(false, animations && !reducedMotion);
         hideGlass();
         hideHero();
     }

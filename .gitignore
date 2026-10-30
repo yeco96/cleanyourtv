@@ -21,3 +21,6 @@ bench-results/
 *.aab
 launcher/hs_err_pid*.log
 launcher/replay_pid*.log
+
+# TMDb API key kept next to the project, pushed to the TV with tools/tv.py --push; never committed
+tmdb_key.txt

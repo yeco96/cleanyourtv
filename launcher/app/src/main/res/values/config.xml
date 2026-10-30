@@ -372,6 +372,12 @@
          the launcher then neither reads the guide nor downloads a poster. Can also be set with "continue_row": false in
          a theme's config.json, or from Launcher settings on the TV. -->
     <bool name="continue_row">true</bool>
+    <!-- TMDb movie backdrops as the wallpaper, with a panel of the movie's title, stars, year, genres, runtime and
+         overview. It needs a free TMDb API key, kept in tmdb_key.txt in the launcher's files folder on the TV (never
+         inside the APK or a theme). Once a day it downloads about 20 backdrops from api.themoviedb.org and
+         image.tmdb.org and replaces the wallpapers folder, so use it without a theme wallpapers folder. false (the
+         default) goes nowhere. A theme sets it with "tmdb_backdrops": true, and "tmdb_language" (es-MX, en-US). -->
+    <bool name="tmdb_backdrops">false</bool>
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if
          the dock, its title and this many rows would not otherwise fit the screen height. -->

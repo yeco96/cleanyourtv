@@ -670,7 +670,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             int inner = (r - l) - grid.getPaddingLeft() - grid.getPaddingRight();
             int tileW = AppAdapter.tileWidthPx(inner, h, COLUMNS, rowsBelowDock, cfg.dockTitle, cfg.dockRow, density);
             int itemH = AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(tileW), density);
+            int rowBefore = continueRow.height();
             continueRow.setSizes(inner / COLUMNS, tileW, AppAdapter.tileHeightPx(tileW));
+            // The room reserved for the row is its height: when the tile size settles, reserve it again, or the row
+            // is placed by a height the grid never made room for and sits over the dock.
+            if (continueRow.height() != rowBefore) grid.post(grid::invalidateItemDecorations);
             int dockRow = itemH + (int) (AppAdapter.DOCK_EXTRA_DP * density);   // item height plus DockDecoration offsets
             int gridRows = itemH * rowsBelowDock;
             // Keep the hero below the header when the library is enabled on a short screen,

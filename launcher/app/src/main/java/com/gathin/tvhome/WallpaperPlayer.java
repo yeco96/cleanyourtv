@@ -118,6 +118,10 @@ final class WallpaperPlayer {
         if (tmdb) {
             if (!files.isEmpty()) movies = WallpaperCaptions.readMovies(files.get(0).getParentFile());
             scrim = makeScrim(context);
+            leaving = new ImageView(context);
+            leaving.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            leaving.setAlpha(0f);
+            leaving.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             dim = new View(context);
             dim.setBackgroundColor(0xFF000000);
             dim.setAlpha(DIM_DOCK);
@@ -130,15 +134,29 @@ final class WallpaperPlayer {
         }
     }
 
-    /** The picture goes under everything; with tmdb_backdrops the scrims and the dim go right over it. */
+    /** The pictures this round of a shuffle has shown already: every picture comes once before any comes back. */
+    private final Set<String> shownThisRound = new java.util.HashSet<>();
+
+    /** The next picture: the sorted order for wallpaper_order sequential, else a shuffle that does not repeat. */
+    private File chooseNext(List<File> playable, String previous) {
+        return WallpaperRotation.ORDER_SEQUENTIAL.equals(order)
+                ? WallpaperRotation.next(playable, previous)
+                : WallpaperRotation.pickFresh(playable, shownThisRound, previous, random);
+    }
+
+    /**
+     * The picture goes under everything; with tmdb_backdrops the picture that is leaving (the cross-fade) and the
+     * scrims and the dim go right over it, in that order.
+     */
     private void attach() {
         if (image.getParent() != null) return;
         ViewGroup.LayoutParams fill = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         root.addView(image, 0, fill);
         if (tmdb) {
-            root.addView(scrim, 1, fill);
-            root.addView(dim, 2, fill);
+            root.addView(leaving, 1, fill);
+            root.addView(scrim, 2, fill);
+            root.addView(dim, 3, fill);
         }
     }
 
@@ -177,7 +195,7 @@ final class WallpaperPlayer {
         String previous = preferences.getString("image", "");
         List<File> playable = playable();
         File first = WallpaperRotation.find(playable, previous);
-        if (first == null) first = WallpaperRotation.pick(playable, previous, order, random);
+        if (first == null) first = chooseNext(playable, previous);
         while (first != null) {
             Bitmap bitmap = decode(first);
             if (bitmap != null) {
@@ -186,6 +204,7 @@ final class WallpaperPlayer {
                 root.setBackground(null);
                 displayed = first.getName();
                 showCaption(false);
+                applyContrast();
                 if (!displayed.equals(previous)) {
                     preferences.edit().putString("image", displayed)
                             .putLong("changed", System.currentTimeMillis()).apply();
@@ -194,7 +213,7 @@ final class WallpaperPlayer {
             }
             files.remove(first);   // unreadable or over 4K: try another, or keep the plain colour
             playable = playable();
-            first = WallpaperRotation.pick(playable, previous, order, random);
+            first = chooseNext(playable, previous);
         }
     }
 
@@ -227,6 +246,7 @@ final class WallpaperPlayer {
             if (closed) return;
             files.clear();
             files.addAll(fresh);
+            shownThisRound.clear();
             movies = freshMovies;
             attach();
             preferences.edit().remove("image").remove("changed").apply();
@@ -243,6 +263,7 @@ final class WallpaperPlayer {
     void releaseForMemoryPressure() {
         if (current == null) return;
         image.setImageDrawable(null);
+        if (leaving != null) leaving.setImageDrawable(null);
         // The renderer may still have a queued frame that references this hardware bitmap. Drop our references and
         // let Android reclaim its native buffer after rendering releases it instead of recycling it mid-frame.
         current = null;
@@ -285,7 +306,7 @@ final class WallpaperPlayer {
         long changed = preferences.getLong("changed", 0);
         boolean due = turnOver || (!tmdb && WallpaperRotation.due(changed, System.currentTimeMillis(), interval));
         if (selected == null || due) {
-            selected = WallpaperRotation.pick(playable, previous, order, random);
+            selected = chooseNext(playable, previous);
         }
         if (selected == null || selected.getName().equals(displayed)) return;
         File next = selected;
@@ -307,6 +328,7 @@ final class WallpaperPlayer {
                 show(bitmap);
                 displayed = next.getName();
                 showCaption(true);
+                applyContrast();
                 if (!displayed.equals(previous) || changed == 0) {
                     preferences.edit().putString("image", displayed)
                             .putLong("changed", System.currentTimeMillis()).apply();
@@ -484,7 +506,7 @@ final class WallpaperPlayer {
         float y = visible ? 0f : -90f * dp;
         float alpha = visible && movies.get(displayed) != null ? 1f : 0f;
         // Down in the app rows the picture goes dark, so the tiles read over any backdrop; back on the dock it returns.
-        float dimAlpha = visible ? DIM_DOCK : DIM_GRID;
+        float dimAlpha = visible ? dockDimAlpha : DIM_GRID;
         moviePanel.animate().cancel();
         dim.animate().cancel();
         if (!animate) {
@@ -511,8 +533,61 @@ final class WallpaperPlayer {
         current = bitmap;
         // The wallpaper covers the whole root; avoid drawing the fallback colour under it.
         root.setBackground(null);
+        if (tmdb && leaving != null && old != null && old != bitmap && image.getDrawable() != null
+                && image.getParent() != null) {
+            // The film changes with a cross-fade: the one leaving stays on a layer above and melts away, and is
+            // released once it is gone. Two backdrops are in memory for that moment (about 7 MB).
+            leaving.animate().cancel();
+            leaving.setImageDrawable(image.getDrawable());
+            leaving.setAlpha(1f);
+            image.setImageBitmap(bitmap);
+            leaving.animate().alpha(0f).setDuration(CROSSFADE_MS).withEndAction(() -> leaving.setImageDrawable(null)).start();
+            image.postDelayed(old::recycle, CROSSFADE_MS + 400);
+            return;
+        }
         image.setImageBitmap(bitmap);
         if (old != null && old != bitmap) image.postDelayed(old::recycle, 500);
+    }
+
+    /** How long a film takes to melt into the next (tmdb_backdrops). */
+    private static final long CROSSFADE_MS = 700;
+    /** The leaving film's layer, above the picture and below the scrims. */
+    private ImageView leaving;
+    /** Mean brightness of each picture's text side, measured when it is decoded. */
+    private final Map<String, Float> brightness = new java.util.concurrent.ConcurrentHashMap<>();
+    /** The dim over the picture while the focus is on the dock: lighter for a dark film, darker for a bright one. */
+    private float dockDimAlpha = DIM_DOCK;
+
+    /**
+     * Sets the scrim and the dim for the picture now on screen from how bright its text side is: a dark film keeps its
+     * colour, a bright one gets the full scrim and a darker picture. Fades with the cross-fade.
+     */
+    private void applyContrast() {
+        if (!tmdb || scrim == null) return;
+        Float measured = brightness.get(displayed);
+        float luminance = measured == null ? 0.4f : measured;
+        dockDimAlpha = BackdropContrast.dockDim(luminance);
+        scrim.animate().cancel();
+        scrim.animate().alpha(BackdropContrast.scrim(luminance)).setDuration(CROSSFADE_MS).start();
+        if (panelVisible) {
+            dim.animate().cancel();
+            dim.animate().alpha(dockDimAlpha).setDuration(CROSSFADE_MS).start();
+        }
+    }
+
+    /** Mean brightness of the left 55% of the picture, where the text goes; sampled, not every pixel. */
+    private static float textSideBrightness(Bitmap bitmap) {
+        int columns = 28, rows = 16;
+        int[] sample = new int[columns * rows];
+        int count = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < columns; c++) {
+                int x = (int) ((c + 0.5f) / columns * 0.55f * bitmap.getWidth());
+                int y = (int) ((r + 0.5f) / rows * bitmap.getHeight());
+                sample[count++] = bitmap.getPixel(Math.min(x, bitmap.getWidth() - 1), Math.min(y, bitmap.getHeight() - 1));
+            }
+        }
+        return BackdropContrast.luminance(sample, count);
     }
 
     private Bitmap decode(File file) {
@@ -537,6 +612,7 @@ final class WallpaperPlayer {
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
+            if (tmdb) brightness.put(file.getName(), textSideBrightness(decoded));
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
             Bitmap gpu = decoded.copy(Bitmap.Config.HARDWARE, false);

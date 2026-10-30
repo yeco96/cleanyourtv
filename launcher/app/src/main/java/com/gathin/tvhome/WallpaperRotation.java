@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 
 final class WallpaperRotation {
     /** Playback orders persisted in config.json (wallpaper_order). */
@@ -60,6 +61,26 @@ final class WallpaperRotation {
         List<File> candidates = new ArrayList<>(images);
         if (candidates.size() > 1) candidates.removeIf(image -> image.getName().equals(previous));
         return candidates.isEmpty() ? null : candidates.get(random.nextInt(candidates.size()));
+    }
+
+    /**
+     * A shuffle that deals every picture once before any comes back, like a deck: a random one of those not yet in
+     * {@code shown}. When all have been shown the round starts over, and the picture that closed the last round does
+     * not open the next. {@code shown} is filled in as pictures are picked, so the caller keeps it between calls.
+     */
+    static File pickFresh(List<File> images, Set<String> shown, String previous, Random random) {
+        if (images.isEmpty()) return null;
+        List<File> fresh = new ArrayList<>();
+        for (File image : images) if (!shown.contains(image.getName())) fresh.add(image);
+        if (fresh.isEmpty()) {
+            shown.clear();
+            for (File image : images) {
+                if (images.size() == 1 || !image.getName().equals(previous)) fresh.add(image);
+            }
+        }
+        File picked = fresh.get(random.nextInt(fresh.size()));
+        shown.add(picked.getName());
+        return picked;
     }
 
     /**

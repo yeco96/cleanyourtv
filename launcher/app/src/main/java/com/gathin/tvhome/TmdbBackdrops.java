@@ -82,7 +82,29 @@ final class TmdbBackdrops {
                 .getLong(LAST_UPDATE, 0) > UPDATE_INTERVAL_MS;
         if (!due && WallpaperRotation.images(wallpapers).size() >= MIN_PICTURES) return;
         String language = language(config.tmdbLanguage);
-        EXECUTOR.execute(() -> fetch(app, base, key, language, player));
+        String certification = certification(config.tmdbMaxCertification);
+        EXECUTOR.execute(() -> fetch(app, base, key, language, certification, player));
+    }
+
+    /** The highest US rating allowed: one of G, PG, PG-13, R, NC-17; PG-13 when unset or unknown, none for "any". */
+    static String certification(String configured) {
+        if (configured == null) return DEFAULT_CERTIFICATION;
+        String value = configured.trim().toUpperCase(Locale.ROOT);
+        if (value.isEmpty() || value.equals("ANY")) return value.isEmpty() ? DEFAULT_CERTIFICATION : "";
+        return CERTIFICATIONS.contains(value) ? value : DEFAULT_CERTIFICATION;
+    }
+
+    private static final String DEFAULT_CERTIFICATION = "PG-13";
+    private static final Set<String> CERTIFICATIONS = new HashSet<>(java.util.Arrays.asList("G", "PG", "PG-13", "R", "NC-17"));
+
+    /** One from each list in turn, then what is left of the longer one: popular, family, popular, family. */
+    static <T> List<T> interleave(List<T> first, List<T> second) {
+        List<T> mixed = new ArrayList<>(first.size() + second.size());
+        for (int i = 0; i < Math.max(first.size(), second.size()); i++) {
+            if (i < first.size()) mixed.add(first.get(i));
+            if (i < second.size()) mixed.add(second.get(i));
+        }
+        return mixed;
     }
 
     /** The key in {@code tmdb_key.txt}, or null when there is no such file or it does not look like a key. */
@@ -106,7 +128,8 @@ final class TmdbBackdrops {
         return LANGUAGE.matcher(tag).matches() ? tag : "en-US";
     }
 
-    private static void fetch(Context context, File base, String key, String language, WallpaperPlayer player) {
+    private static void fetch(Context context, File base, String key, String language, String certification,
+                              WallpaperPlayer player) {
         if (!FETCHING.compareAndSet(false, true)) return;
         File staging = new File(base, "wallpapers_staging");
         try {
@@ -115,10 +138,17 @@ final class TmdbBackdrops {
                 return;
             }
             Set<Integer> seen = new HashSet<>();
-            List<JSONObject> movies = new ArrayList<>(
-                    pick(API + "/movie/popular?api_key=" + key + "&language=" + language, POPULAR, seen));
-            movies.addAll(pick(API + "/discover/movie?api_key=" + key + "&with_companies=2%7C3&language=" + language,
-                    FAMILY, seen));
+            // The rating filter works on discover, so with one the popular list is discover sorted by popularity.
+            String rated = certification.isEmpty() ? "" : "&certification_country=US&certification.lte=" + certification;
+            String popularUrl = certification.isEmpty()
+                    ? API + "/movie/popular?api_key=" + key + "&language=" + language
+                    : API + "/discover/movie?api_key=" + key + "&language=" + language
+                            + "&include_adult=false&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=6" + rated;
+            List<JSONObject> popular = pick(popularUrl, POPULAR, seen);
+            List<JSONObject> family = pick(API + "/discover/movie?api_key=" + key + "&with_companies=2%7C3&language="
+                    + language + "&include_adult=false&vote_count.gte=200&vote_average.gte=6" + rated, FAMILY, seen);
+            // One of each in turn, so the sequence is varied (not twelve popular films and then eight Disney ones).
+            List<JSONObject> movies = interleave(popular, family);
             if (movies.isEmpty()) {
                 Log.w(TAG, "TMDb returned no movies (is the key valid?).");
                 return;

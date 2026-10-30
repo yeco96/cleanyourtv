@@ -175,8 +175,6 @@
     <string name="usage_average">Average per day of use: %1$s</string>
     <string name="usage_minutes">%1$d min</string>
     <string name="usage_hours_minutes">%1$d h %2$d min</string>
-    <string name="kid_service_name">Kids mode time limit</string>
-    <string name="kid_service_description">Sends the TV back to Home when the kids\' time for the day is up. It only sees which app is in front.</string>
     <string name="kid_set_pin">Create a 4-digit PIN</string>
     <string name="kid_repeat_pin">Repeat the PIN</string>
     <string name="kid_enter_pin">Enter the PIN</string>
@@ -201,4 +199,7 @@
     <string name="kid_pick_title">Apps the kids can open</string>
     <string name="kid_pick_hint">OK ticks or unticks an app. Back saves.</string>
     <string name="kid_wait">Too many wrong tries. Wait %1$d s.</string>
+    <string name="kid_today_total">Today: %1$s</string>
+    <string name="kid_service_name">Kids mode guard</string>
+    <string name="kid_service_description">Counts the time the children use and sends any app that is not on their list back to their own screen. It only sees which app is in front.</string>
 </resources>

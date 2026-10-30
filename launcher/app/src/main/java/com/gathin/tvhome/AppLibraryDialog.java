@@ -234,7 +234,7 @@ final class AppLibraryDialog {
                     if (info.activityInfo == null || !info.activityInfo.exported) continue;
                     String pkg = info.activityInfo.packageName;
                     if (Intent.CATEGORY_LEANBACK_LAUNCHER.equals(category)) tv.add(pkg);
-                    if (!pkg.equals(self) && !LibraryApps.excludedFromCatalog(excludedApps, pkg) && !unique.containsKey(pkg)) unique.put(pkg, info);
+                    if (!KidModeLaunchActivity.isOtherOwn(self, info.activityInfo) && !LibraryApps.excludedFromCatalog(excludedApps, pkg) && !unique.containsKey(pkg)) unique.put(pkg, info);
                 }
             }
             Map<String, String> names = new HashMap<>();

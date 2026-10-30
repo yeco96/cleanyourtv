@@ -169,8 +169,6 @@
     <string name="usage_average">ממוצע ליום שימוש: %1$s</string>
     <string name="usage_minutes">%1$d ד׳</string>
     <string name="usage_hours_minutes">%1$d ש׳ %2$d ד׳</string>
-    <string name="kid_service_name">הגבלת זמן במצב ילדים</string>
-    <string name="kid_service_description">מחזיר את הטלוויזיה למסך הבית כשזמן הילדים להיום נגמר. רואה רק איזו אפליקציה בחזית.</string>
     <string name="kid_set_pin">צרו קוד PIN בן 4 ספרות</string>
     <string name="kid_repeat_pin">חזרו על הקוד</string>
     <string name="kid_enter_pin">הזינו את הקוד</string>
@@ -195,4 +193,7 @@
     <string name="kid_pick_title">אפליקציות שהילדים יכולים לפתוח</string>
     <string name="kid_pick_hint">אישור מסמן או מבטל אפליקציה. חזרה שומרת.</string>
     <string name="kid_wait">יותר מדי ניסיונות. המתינו %1$d שניות.</string>
+    <string name="kid_today_total">היום: %1$s</string>
+    <string name="kid_service_name">שומר מצב ילדים</string>
+    <string name="kid_service_description">סופר את זמן הילדים ומחזיר למסך הילדים כל אפליקציה שאינה ברשימה שלהם. רואה רק איזו אפליקציה בחזית.</string>
 </resources>

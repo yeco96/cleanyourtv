@@ -166,8 +166,6 @@
     <string name="usage_average">Promedio por día de uso: %1$s</string>
     <string name="usage_minutes">%1$d min</string>
     <string name="usage_hours_minutes">%1$d h %2$d min</string>
-    <string name="kid_service_name">Límite de tiempo del modo niños</string>
-    <string name="kid_service_description">Devuelve la TV al inicio cuando se acaba el tiempo de los niños por hoy. Solo ve qué app está al frente.</string>
     <string name="kid_set_pin">Crea un PIN de 4 dígitos</string>
     <string name="kid_repeat_pin">Repite el PIN</string>
     <string name="kid_enter_pin">Escribe el PIN</string>
@@ -192,4 +190,7 @@
     <string name="kid_pick_title">Apps que pueden abrir los niños</string>
     <string name="kid_pick_hint">OK marca o desmarca una app. Atrás guarda.</string>
     <string name="kid_wait">Demasiados intentos. Espera %1$d s.</string>
+    <string name="kid_today_total">Hoy llevas: %1$s</string>
+    <string name="kid_service_name">Guardia del modo niños</string>
+    <string name="kid_service_description">Cuenta el tiempo de los niños y devuelve a la pantalla de niños cualquier app que no esté en su lista. Solo ve qué app está al frente.</string>
 </resources>

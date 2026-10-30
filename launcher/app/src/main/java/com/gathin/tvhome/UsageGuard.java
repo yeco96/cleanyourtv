@@ -79,7 +79,8 @@ final class UsageGuard {
         return isActive(c) && !allowed(c).isEmpty();
     }
 
-    private static String today() {
+    /** Today's date as the day key (a day runs from 05:00 to 05:00). */
+    static String today() {
         return UsageDays.dayOf(System.currentTimeMillis(), ZoneId.systemDefault(), UsageTracker.DAY_SHIFT_HOURS);
     }
 

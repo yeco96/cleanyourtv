@@ -185,4 +185,5 @@
     <string name="kid_hour_1">Los niños llevan 1 hora de TV hoy</string>
     <string name="kid_hour_2">Los niños llevan 2 horas de TV hoy</string>
     <string name="kid_used">Usado hoy: %1$d min</string>
+    <string name="usage_day_note">Día desde las 5:00: %1$s</string>
 </resources>

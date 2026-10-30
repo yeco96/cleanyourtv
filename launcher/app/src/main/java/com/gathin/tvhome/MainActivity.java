@@ -3104,13 +3104,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View btnLibraryTop;
     /** The kids mode pill: its name, or the time the kids have left today while it is on (usage_limit). */
     private View btnKids;
+    private android.content.res.ColorStateList kidsPillColors;
 
     private void updateKidsPill() {
         TextView pill = (TextView) btnKids;
+        if (kidsPillColors == null) kidsPillColors = pill.getTextColors();
         if (!UsageGuard.isActive(this)) {
             pill.setText(R.string.kid_btn_off);
+            pill.setTextColor(kidsPillColors);
             return;
         }
+        pill.setTextColor(0xFFF5B945);
         pill.setText(getString(R.string.kid_btn_on, (UsageGuard.usedSeconds(this) + 30) / 60));
     }
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */

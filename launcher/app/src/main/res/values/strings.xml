@@ -195,4 +195,5 @@
     <string name="kid_hour_1">The kids have used the TV for 1 hour today</string>
     <string name="kid_hour_2">The kids have used the TV for 2 hours today</string>
     <string name="kid_used">Used today: %1$d min</string>
+    <string name="usage_day_note">Day starting 5:00 a.m.: %1$s</string>
 </resources>

@@ -189,4 +189,5 @@
     <string name="kid_hour_1">הילדים צפו בטלוויזיה שעה אחת היום</string>
     <string name="kid_hour_2">הילדים צפו בטלוויזיה שעתיים היום</string>
     <string name="kid_used">שימוש היום: %1$d דקות</string>
+    <string name="usage_day_note">יום שמתחיל ב-5:00: %1$s</string>
 </resources>

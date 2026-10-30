@@ -130,6 +130,9 @@ public final class UsageActivity extends Activity {
             body.addView(text(getString(R.string.usage_nothing), 18, 0xCCFFFFFF));
             return;
         }
+        if (days == 1) body.addView(text(getString(R.string.usage_day_note, today.format(
+                java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+                        .withLocale(Locale.getDefault()))), 16, 0xAAFFFFFF));
         body.addView(text(duration(total), 44, Color.WHITE));
         String sub = getString(R.string.usage_split, duration(UsageReport.total(now, UsageReport.ADULT)),
                 duration(UsageReport.total(now, UsageReport.CHILD)));
@@ -188,9 +191,15 @@ public final class UsageActivity extends Activity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(0, dp(5), 0, dp(5));
+        android.widget.ImageView icon = new android.widget.ImageView(this);
+        icon.setImageDrawable(icon(app.pkg));
+        LinearLayout.LayoutParams iconAt = new LinearLayout.LayoutParams(dp(34), dp(34));
+        iconAt.setMarginEnd(dp(14));
+        row.addView(icon, iconAt);
         TextView name = text(label(app.pkg), 18, Color.WHITE);
         name.setSingleLine(true);
-        row.addView(name, new LinearLayout.LayoutParams(dp(260), -2));
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        row.addView(name, new LinearLayout.LayoutParams(dp(230), -2));
         row.addView(new ShareBar(this, (float) app.seconds / top), new LinearLayout.LayoutParams(0, dp(10), 1f));
         TextView time = text(duration(app.seconds), 18, 0xCCFFFFFF);
         time.setGravity(Gravity.END);
@@ -215,6 +224,14 @@ public final class UsageActivity extends Activity {
             canvas.drawRoundRect(0, 0, getWidth(), getHeight(), r, r, paint);
             paint.setColor(ACCENT);
             canvas.drawRoundRect(0, 0, Math.max(getHeight(), getWidth() * share), getHeight(), r, r, paint);
+        }
+    }
+
+    private android.graphics.drawable.Drawable icon(String pkg) {
+        try {
+            return getPackageManager().getApplicationIcon(pkg);
+        } catch (PackageManager.NameNotFoundException e) {
+            return getPackageManager().getDefaultActivityIcon();
         }
     }
 

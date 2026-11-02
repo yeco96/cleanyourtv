@@ -3,9 +3,16 @@ package com.gathin.tvhome;
 /** The daily windows in which kids mode turns itself on and off (usage_limit). Choices, not free times: OK steps through them. No Android types. */
 final class KidsSchedule {
     /** Start and end hour of each choice; the first is "off". */
-    private static final int[][] CHOICES = {{0, 0}, {15, 19}, {15, 20}, {16, 21}, {14, 22}};
+    private static final int[][] CHOICES = {{0, 0}, {15, 19}, {15, 20}, {16, 21}, {14, 22}, {0, 24}};
+
+    /** The last choice: the whole day. Kids mode is the default and a grown-up leaves it with the PIN. */
+    static final int ALWAYS = 5;
 
     private KidsSchedule() { }
+
+    static boolean always(int choice) {
+        return choice == ALWAYS;
+    }
 
     static int count() {
         return CHOICES.length;

@@ -215,4 +215,5 @@
     <string name="tmdb_updated">Películas actualizadas: %1$d imágenes nuevas</string>
     <string name="tmdb_update_failed">No se pudieron actualizar las películas. Revisa la conexión a internet.</string>
     <string name="tmdb_no_key">No hay clave de TMDb en esta TV, así que no hay nada que actualizar.</string>
+    <string name="kid_schedule_always">Modo automático: siempre (los adultos salen con el PIN)</string>
 </resources>

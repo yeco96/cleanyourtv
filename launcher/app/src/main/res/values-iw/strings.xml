@@ -219,4 +219,5 @@
     <string name="tmdb_updated">הסרטים עודכנו: %1$d תמונות חדשות</string>
     <string name="tmdb_update_failed">לא ניתן היה לעדכן את הסרטים. בדקו את החיבור לאינטרנט.</string>
     <string name="tmdb_no_key">אין מפתח TMDb בטלוויזיה הזו, ולכן אין מה לעדכן.</string>
+    <string name="kid_schedule_always">מצב אוטומטי: תמיד (מבוגרים יוצאים עם PIN)</string>
 </resources>

@@ -120,6 +120,12 @@ Un modo que **separa el tiempo de los niños del de los adultos**, limita su uso
 **Horario automático**
 - Encendido y apagado solo en una franja (apagado, 15–19, 15–20, 16–21 o 14–22 h), si lo encendió el horario y ya hay PIN y
   apps. Si un adulto sale con el PIN dentro de la franja, no se vuelve a encender ese día.
+- **Siempre** (la última opción): el Modo niños es el modo por defecto y el adulto sale con "Adultos" y el PIN. Su turno
+  termina, y el Modo niños vuelve solo, cuando la TV se apaga (la pantalla se apaga), cuando arranca el salvapantallas
+  (la TV quedó inactiva) o tras un reinicio. Al despertar, lo que se ve es la pantalla de niños. Una película en marcha
+  mantiene la TV despierta, así que no se corta a mitad. Lo escucha el servicio de la guardia (por eso esta opción lo
+  enciende); sin PIN o sin apps permitidas no se activa solo. Se probó en la TV 1: con el adulto fuera, la TV se apagó y
+  al encenderla con el mando apareció la pantalla de niños. No se probó la vía del salvapantallas.
 
 **Dónde se ve todo:** las filas de las opciones (con scroll) son: desactivar, límites, tiempo extra, quitar el extra, horario,
 apps, cambiar el PIN y cerrar.

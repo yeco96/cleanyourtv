@@ -252,7 +252,8 @@ public final class KidModeActivity extends Activity {
         }
         addOption(getString(R.string.kid_extra, 30), () -> UsageGuard.addExtraMinutes(this, 30));
         int plan = UsageGuard.schedule(this);
-        addOption(plan == 0 ? getString(R.string.kid_schedule_off) : getString(R.string.kid_schedule_on,
+        addOption(plan == 0 ? getString(R.string.kid_schedule_off) : KidsSchedule.always(plan) ? getString(R.string.kid_schedule_always)
+                : getString(R.string.kid_schedule_on,
                 String.format("%02d:00", KidsSchedule.startHour(plan)), String.format("%02d:00", KidsSchedule.endHour(plan))),
                 () -> UsageGuard.setSchedule(this, KidsSchedule.next(UsageGuard.schedule(this))));
         addOption(getString(R.string.kid_pick_apps), () -> startActivity(new Intent(this, KidAppsActivity.class)));

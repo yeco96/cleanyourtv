@@ -31,4 +31,15 @@ public class KidsScheduleTest {
         assertEquals(15, KidsSchedule.startHour(1));
         assertEquals(19, KidsSchedule.endHour(1));
     }
+
+    @Test
+    public void theLastChoiceIsTheWholeDay() {
+        assertTrue(KidsSchedule.always(KidsSchedule.ALWAYS));
+        assertFalse(KidsSchedule.always(1));
+        assertTrue(KidsSchedule.inWindow(KidsSchedule.ALWAYS, 0));
+        assertTrue(KidsSchedule.inWindow(KidsSchedule.ALWAYS, 12 * 60));
+        assertTrue(KidsSchedule.inWindow(KidsSchedule.ALWAYS, 24 * 60 - 1));
+        assertEquals(0, KidsSchedule.next(KidsSchedule.ALWAYS));
+        assertEquals(KidsSchedule.ALWAYS, KidsSchedule.count() - 1);
+    }
 }

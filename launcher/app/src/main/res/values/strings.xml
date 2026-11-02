@@ -225,4 +225,5 @@
     <string name="tmdb_updated">Movies updated: %1$d new pictures</string>
     <string name="tmdb_update_failed">Could not update the movies. Check the internet connection.</string>
     <string name="tmdb_no_key">There is no TMDb key on this TV, so there is nothing to update.</string>
+    <string name="kid_schedule_always">Automatic mode: always (grown-ups leave with the PIN)</string>
 </resources>

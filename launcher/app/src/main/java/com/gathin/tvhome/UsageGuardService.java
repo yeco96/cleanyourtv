@@ -1,7 +1,10 @@
 package com.gathin.tvhome;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
@@ -38,7 +41,32 @@ public final class UsageGuardService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         running = this;
+        IntentFilter idle = new IntentFilter();
+        idle.addAction(Intent.ACTION_SCREEN_OFF);
+        idle.addAction(Intent.ACTION_SCREEN_ON);
+        idle.addAction(Intent.ACTION_DREAMING_STARTED);
+        idle.addAction(Intent.ACTION_DREAMING_STOPPED);
+        registerReceiver(idleReceiver, idle);
     }
+
+    /**
+     * Under the "always" schedule the TV going idle (screen off, or the screensaver coming on) ends a grown-up's turn,
+     * and when it wakes up the kids screen is what it shows. A film playing keeps the TV from idling, so it is never cut.
+     */
+    private final BroadcastReceiver idleReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action == null) return;
+            if (Intent.ACTION_SCREEN_OFF.equals(action) || Intent.ACTION_DREAMING_STARTED.equals(action)) {
+                UsageGuard.returnToKids(UsageGuardService.this);
+            } else if (KidsSchedule.always(UsageGuard.schedule(UsageGuardService.this)) && UsageGuard.guarding(UsageGuardService.this)) {
+                performGlobalAction(GLOBAL_ACTION_HOME);
+                startActivity(new Intent(UsageGuardService.this, KidsHomeActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
+            }
+        }
+    };
 
     /**
      * A big card on top of whatever is playing, for eight seconds, that takes no focus and no keys, so the video keeps
@@ -151,6 +179,11 @@ public final class UsageGuardService extends AccessibilityService {
     @Override
     public void onDestroy() {
         if (running == this) running = null;
+        try {
+            unregisterReceiver(idleReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // never registered
+        }
         handler.removeCallbacks(tick);
         super.onDestroy();
     }

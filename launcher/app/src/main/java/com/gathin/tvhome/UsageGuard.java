@@ -192,12 +192,29 @@ final class UsageGuard {
 
     static void setSchedule(Context c, int choice) {
         prefs(c).edit().putInt("schedule", choice).putString("suppressed", "").apply();
+        if (KidsSchedule.always(choice)) enableService(c);   // the watcher hears the TV go idle
+    }
+
+    /** What "suppressed" holds while a grown-up has left kids mode under the "always" schedule. */
+    private static final String ADULT = "adult";
+
+    private static int bootCount(Context c) {
+        return Settings.Global.getInt(c.getContentResolver(), Settings.Global.BOOT_COUNT, 0);
+    }
+
+    /** The TV went idle (screen off or screensaver): under "always" the kids screen comes back for whoever picks it up next. */
+    static void returnToKids(Context c) {
+        SharedPreferences p = prefs(c);
+        if (!KidsSchedule.always(schedule(c)) || !ADULT.equals(p.getString("suppressed", ""))) return;
+        p.edit().putString("suppressed", "").apply();
+        applySchedule(c);
     }
 
     /** A grown-up left with the PIN: inside a window the schedule does not turn the mode on again that day. */
     static void leaveByPin(Context c) {
         SharedPreferences.Editor edit = prefs(c).edit().putBoolean("enabled", false).putBoolean("auto", false);
-        if (KidsSchedule.inWindow(schedule(c), minuteOfDay())) edit.putString("suppressed", today() + ":" + schedule(c));
+        if (KidsSchedule.always(schedule(c))) edit.putString("suppressed", ADULT).putInt("adult_boot", bootCount(c));
+        else if (KidsSchedule.inWindow(schedule(c), minuteOfDay())) edit.putString("suppressed", today() + ":" + schedule(c));
         edit.apply();
     }
 
@@ -212,8 +229,14 @@ final class UsageGuard {
             if (p.getBoolean("auto", false)) p.edit().putBoolean("auto", false).apply();
             return;
         }
+        // A restart is the TV turning off: the grown-up's turn is over.
+        if (ADULT.equals(p.getString("suppressed", "")) && p.getInt("adult_boot", -1) != bootCount(c)) {
+            p.edit().putString("suppressed", "").apply();
+        }
+        String suppressed = p.getString("suppressed", "");
+        boolean left = KidsSchedule.always(choice) ? ADULT.equals(suppressed) : (today() + ":" + choice).equals(suppressed);
         if (KidsSchedule.inWindow(choice, minuteOfDay())) {
-            if (!isActive(c) && hasPin(c) && !allowed(c).isEmpty() && !(today() + ":" + choice).equals(p.getString("suppressed", ""))) {
+            if (!isActive(c) && hasPin(c) && !allowed(c).isEmpty() && !left) {
                 p.edit().putBoolean("enabled", true).putBoolean("auto", true).apply();
                 enableService(c);
             }
@@ -227,7 +250,7 @@ final class UsageGuard {
      * time Home opens while the mode is on: installing the launcher rewrites the list of accessibility services.
      */
     static void ensureService(Context c) {
-        if (isActive(c)) enableService(c);
+        if (isActive(c) || KidsSchedule.always(schedule(c))) enableService(c);
     }
 
     private static void enableService(Context c) {

@@ -99,8 +99,11 @@ public final class UsageGuardService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
-        check();
         CharSequence pkg = event.getPackageName();
+        // Our own notice card is a window too: it must not count as the kids' screen coming to the front.
+        CharSequence cls = event.getClassName();
+        if (pkg != null && getPackageName().contentEquals(pkg) && (cls == null || !cls.toString().startsWith(getPackageName() + "."))) return;
+        check();
         if (pkg != null) lastFront = pkg.toString();
         if (pkg == null || !UsageGuard.guarding(this)) return;
         // With the time used up nothing is allowed but the kids' screen.
@@ -134,6 +137,8 @@ public final class UsageGuardService extends AccessibilityService {
         UsageTracker.update(this, UsageReport.CHILD);
         UsageGuard.checkNotice(this);
         if (UsageGuard.timeUp(this) && !getPackageName().equals(lastFront)) {   // time ran out inside an app: send it out
+            // Home first: an accessibility service may always press it, while Android can refuse a start from the background.
+            performGlobalAction(GLOBAL_ACTION_HOME);
             startActivity(new Intent(this, KidsHomeActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
         }
